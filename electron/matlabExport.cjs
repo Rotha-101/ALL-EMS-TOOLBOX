@@ -114,9 +114,10 @@ function buildPowerflowSection(pk, outFolder) {
     ylabel('Q (MVar)');
     title('Reactive Power & Voltage');
     legend({'Vab', 'Vbc', 'Vca', 'Q total', 'Q cmd'}, 'Location', 'northwest');
-    xlim(ax3, [min(t) max(t)]);
+    formatAxis(ax1, t, false); formatAxis(ax2, t, false); formatAxis(ax3, t, true);
 
     linkaxes([ax1, ax2, ax3], 'x');
+    set(figPF_${pk}, 'Visible', 'on');
     savefig(figPF_${pk}, fullfile(outFolder, '${label}_Powerflow_Check.fig'));
     close(figPF_${pk});
 `;
@@ -131,27 +132,29 @@ function buildAllPlantsSection(plants, metric, outFolder) {
 
   let section = `
     ${figVar} = figure('Name', '${title}', 'Visible', 'off', 'Color', 'w', 'Position', [100, 100, 1200, 800]);
+    tlo = tiledlayout(${plants.length}, 1, 'TileSpacing', 'compact', 'Padding', 'compact');
+    title(tlo, '${title}', 'FontWeight', 'bold', 'FontSize', 12);
     ${axVar} = [];
 `;
 
   plants.forEach((pk, i) => {
     if (isSoc) {
       section += `
-    ax = subplot(${plants.length}, 1, ${i + 1}); ${axVar} = [${axVar}, ax];
-    yyaxis left; hold on;
+    ax = nexttile; ${axVar} = [${axVar}, ax];
+    yyaxis left; ax.YColor = [0 0.4471 0.7412]; hold on;
     plot(t, data.pTotal.${pk}, 'Color', [0 0.4471 0.7412], 'LineWidth', 2);
-    stairs(t, data.cmdP.${pk}, 'Color', [0.851 0.3255 0.098], 'LineWidth', 1.6);
     plot(t, data.remoteP.${pk}, 'Color', [0.451 0.1804 0.4], 'LineWidth', 1.6);
     ylabel('P (MW)');
-    yyaxis right;
+    yyaxis right; ax.YColor = [0.851 0.3255 0.098];
     plot(t, data.soc.${pk}, 'Color', [0.851 0.3255 0.098], 'LineWidth', 1.8);
     ylabel('SOC (%)');
-    legend({'P total', 'P cmd', 'Remote P', 'SOC'}, 'Location', 'northeastoutside');
+    legend({'P total', 'Remote Active Power', 'SOC'}, 'Location', 'northwest');
     grid on; title('Plant: ${pk}');
+    formatAxis(ax, t, ${i === plants.length - 1 ? 'true' : 'false'});
 `;
     } else {
       section += `
-    ax = subplot(${plants.length}, 1, ${i + 1}); ${axVar} = [${axVar}, ax];
+    ax = nexttile; ${axVar} = [${axVar}, ax];
     yyaxis left; hold on;
     plot(t, data.vab.${pk}, 'Color', [0 0.4471 0.7412], 'LineWidth', 2);
     plot(t, data.vbc.${pk}, 'Color', [0.4667 0.6745 0.1882], 'LineWidth', 1.6);
@@ -163,13 +166,14 @@ function buildAllPlantsSection(plants, metric, outFolder) {
     ylabel('Q (MVar)');
     legend({'Vab', 'Vbc', 'Vca', 'Q total', 'Q cmd'}, 'Location', 'northeastoutside');
     grid on; title('Plant: ${pk}');
+    formatAxis(ax, t);
 `;
     }
   });
 
   section += `
     linkaxes(${axVar}, 'x');
-    sgtitle('${title}');
+    set(${figVar}, 'Visible', 'on');
     savefig(${figVar}, fullfile(outFolder, '${figFile}'));
     close(${figVar});
 `;
@@ -188,57 +192,61 @@ function buildGenericAllPlantsSection(plants, metric, outFolder) {
 
   let section = `
     ${figVar} = figure('Name', '${title}', 'Visible', 'off', 'Color', 'w', 'Position', [100, 100, 1200, 800]);
+    tlo = tiledlayout(${plants.length}, 1, 'TileSpacing', 'compact', 'Padding', 'compact');
+    title(tlo, '${title}', 'FontWeight', 'bold', 'FontSize', 12);
     ${axVar} = [];
 `;
 
   plants.forEach((pk, i) => {
     if (metric === 'f_p') {
       section += `
-    ax = subplot(${plants.length}, 1, ${i + 1}); ${axVar} = [${axVar}, ax];
-    yyaxis left;
+    ax = nexttile; ${axVar} = [${axVar}, ax];
+    yyaxis left; ax.YColor = [0 0.4471 0.7412]; hold on;
     plot(t, data.pTotal.${pk}, 'Color', [0 0.4471 0.7412], 'LineWidth', 2);
     ylabel('P (MW)');
-    yyaxis right;
+    yyaxis right; ax.YColor = [0.851 0.3255 0.098];
     plot(t, data.freq.${pk}, 'Color', [0.851 0.3255 0.098], 'LineWidth', 1.6);
     ylabel('F (Hz)');
-    legend({'P total', 'Freq'}, 'Location', 'northeastoutside');
+    legend({'P total', 'Freq'}, 'Location', 'northwest');
     grid on; title('Plant: ${pk}');
+    formatAxis(ax, t, ${i === plants.length - 1 ? 'true' : 'false'});
 `;
     } else if (metric === 'soc_p') {
       section += `
-    ax = subplot(${plants.length}, 1, ${i + 1}); ${axVar} = [${axVar}, ax];
-    yyaxis left; hold on;
+    ax = nexttile; ${axVar} = [${axVar}, ax];
+    yyaxis left; ax.YColor = [0 0.4471 0.7412]; hold on;
     plot(t, data.pTotal.${pk}, 'Color', [0 0.4471 0.7412], 'LineWidth', 2);
-    stairs(t, data.cmdP.${pk}, 'Color', [0.851 0.3255 0.098], 'LineWidth', 1.6);
     plot(t, data.remoteP.${pk}, 'Color', [0.451 0.1804 0.4], 'LineWidth', 1.6);
     ylabel('P (MW)');
-    yyaxis right;
+    yyaxis right; ax.YColor = [0.851 0.3255 0.098];
     plot(t, data.soc.${pk}, 'Color', [0.851 0.3255 0.098], 'LineWidth', 1.8);
     ylabel('SOC (%)');
-    legend({'P total', 'P cmd', 'Remote P', 'SOC'}, 'Location', 'northeastoutside');
+    legend({'P total', 'Remote Active Power', 'SOC'}, 'Location', 'northwest');
     grid on; title('Plant: ${pk}');
+    formatAxis(ax, t, ${i === plants.length - 1 ? 'true' : 'false'});
 `;
     } else {
       section += `
-    ax = subplot(${plants.length}, 1, ${i + 1}); ${axVar} = [${axVar}, ax];
-    yyaxis left; hold on;
+    ax = nexttile; ${axVar} = [${axVar}, ax];
+    yyaxis left; ax.YColor = [0 0.4471 0.7412]; hold on;
     plot(t, data.vab.${pk}, 'Color', [0 0.4471 0.7412], 'LineWidth', 2);
     plot(t, data.vbc.${pk}, 'Color', [0.4667 0.6745 0.1882], 'LineWidth', 1.6);
     plot(t, data.vca.${pk}, 'Color', [0.4941 0.1843 0.5569], 'LineWidth', 1.6);
     ylabel('V (kV)');
-    yyaxis right;
+    yyaxis right; ax.YColor = [0.851 0.3255 0.098];
     plot(t, data.qTotal.${pk}, 'Color', [0.851 0.3255 0.098], 'LineWidth', 1.8);
-    stairs(t, data.cmdQ.${pk}, 'Color', [0 0 0], 'LineWidth', 1.2);
+    stairs(t, data.cmdQ.${pk}, 'Color', [0 0 0], 'LineWidth', 1.2, 'LineStyle', '--');
     ylabel('Q (MVar)');
-    legend({'Vab', 'Vbc', 'Vca', 'Q total', 'Q cmd'}, 'Location', 'northeastoutside');
+    legend({'Vab', 'Vbc', 'Vca', 'Q total', 'Q cmd'}, 'Location', 'northwest');
     grid on; title('Plant: ${pk}');
+    formatAxis(ax, t, ${i === plants.length - 1 ? 'true' : 'false'});
 `;
     }
   });
 
   section += `
     linkaxes(${axVar}, 'x');
-    sgtitle('${title}');
+    set(${figVar}, 'Visible', 'on');
     savefig(${figVar}, fullfile(outFolder, '${figFile}'));
     close(${figVar});
 `;
@@ -305,7 +313,24 @@ end
     }
   }
 
-  return `${body}\ndisp('ESS Toolbox MATLAB export completed successfully.');\n`;
+  return `${body}
+disp('ESS Toolbox MATLAB export completed successfully.');
+
+% Helper function to format axes
+function formatAxis(ax, t, showLabels)
+    xlim(ax, [min(t) max(t)]);
+    try
+        ax.XTick = dateshift(min(t), 'start', 'minute', 0) : minutes(30) : max(t);
+    catch
+    end
+    if showLabels
+        xtickformat(ax, 'HH:mm');
+        xtickangle(ax, 45);
+    else
+        xticklabels(ax, {});
+    end
+end
+`;
 }
 
 function runMatlabBatch(matlabExe, scriptPath) {
@@ -328,9 +353,9 @@ function runMatlabBatch(matlabExe, scriptPath) {
   });
 }
 
-async function exportMatlabFigures({ outputFolder, project, evalData }) {
-  if (!outputFolder || !fs.existsSync(outputFolder)) {
-    return { success: false, error: 'Invalid or missing output folder.' };
+async function exportMatlabFigures({ outputZip, project, evalData }) {
+  if (!outputZip) {
+    return { success: false, error: 'Invalid or missing output ZIP path.' };
   }
   if (!evalData || !evalData.timestamps) {
     return { success: false, error: 'No evaluation data available for MATLAB export.' };
@@ -344,7 +369,7 @@ async function exportMatlabFigures({ outputFolder, project, evalData }) {
     };
   }
 
-  const tmpDir = path.join(os.tmpdir(), 'ess_toolbox_matlab_export');
+  const tmpDir = path.join(os.tmpdir(), 'ess_toolbox_matlab_export_' + Date.now());
   fs.mkdirSync(tmpDir, { recursive: true });
 
   const jsonPath = path.join(tmpDir, 'evalData.json');
@@ -352,12 +377,11 @@ async function exportMatlabFigures({ outputFolder, project, evalData }) {
 
   try {
     fs.writeFileSync(jsonPath, JSON.stringify(evalData, null, 2));
-    fs.writeFileSync(scriptPath, buildMatlabScript(project, jsonPath, outputFolder), 'utf8');
-    fs.writeFileSync(path.join(outputFolder, 'evalData.json'), JSON.stringify(evalData, null, 2));
+    fs.writeFileSync(scriptPath, buildMatlabScript(project, jsonPath, tmpDir), 'utf8');
 
     const result = await runMatlabBatch(matlabExe, scriptPath);
     const expectedFiles = getExpectedFigFiles(project);
-    const createdFiles = expectedFiles.filter((name) => fs.existsSync(path.join(outputFolder, name)));
+    const createdFiles = expectedFiles.filter((name) => fs.existsSync(path.join(tmpDir, name)));
 
     if (!result.ok) {
       return {
@@ -382,18 +406,23 @@ async function exportMatlabFigures({ outputFolder, project, evalData }) {
       };
     }
 
+    // Zip everything in tmpDir
+    const AdmZip = require('adm-zip');
+    const zip = new AdmZip();
+    zip.addLocalFolder(tmpDir);
+    zip.writeZip(outputZip);
+
     return {
       success: true,
       matlabExe,
       files: createdFiles,
-      outputFolder,
+      outputFolder: outputZip,
       output: result.stdout.trim(),
     };
   } catch (err) {
     return { success: false, error: err.message || String(err) };
   } finally {
-    try { fs.unlinkSync(jsonPath); } catch (_) {}
-    try { fs.unlinkSync(scriptPath); } catch (_) {}
+    try { fs.rmSync(tmpDir, { recursive: true, force: true }); } catch (_) {}
   }
 }
 

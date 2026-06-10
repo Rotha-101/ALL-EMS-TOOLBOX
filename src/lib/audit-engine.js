@@ -522,7 +522,7 @@ function autoFillNewHeaders(t) {
 $('opt-skip-summary').addEventListener('change', (e) => { optSkipSummary = e.target.checked; });
 
 // ---------- MAT v5 writer (supports nested struct, double, cellstr) ----------
-const MI_INT8=1, MI_INT32=5, MI_UINT32=6, MI_DOUBLE=9, MI_MATRIX=14, MI_UTF16=17;
+const MI_INT8=1, MI_INT32=5, MI_UINT32=6, MI_DOUBLE=9, MI_MATRIX=14, MI_UINT16=4;
 const MX_CELL=1, MX_STRUCT=2, MX_CHAR=4, MX_DOUBLE=6;
 
 function pad8(len) { return (8 - (len % 8)) % 8; }
@@ -566,7 +566,7 @@ function buildCharMatrix1xL(str) {
   for (let i = 0; i < str.length; i++) u16[i] = str.charCodeAt(i);
   return buildElement(MI_MATRIX, concatU8([
     buildArrayFlags(MX_CHAR), buildDimensions([1, str.length]), buildArrayName(''),
-    buildElement(MI_UTF16, new Uint8Array(u16.buffer)),
+    buildElement(MI_UINT16, new Uint8Array(u16.buffer)),
   ]));
 }
 function buildCellOfStringsCol(name, strings) {

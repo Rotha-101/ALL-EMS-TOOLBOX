@@ -121,10 +121,10 @@ export function ValidationDebug({ progress, setProgress }: { progress: { pct: nu
               <div className="flex flex-nowrap justify-between items-center text-[9px] sm:text-[10px] font-mono border-t border-slate-800/50 pt-4 gap-1.5">
                 <span className="bg-slate-800/60 border border-slate-700/30 px-1.5 sm:px-2 py-1 rounded text-slate-300 shrink-0 whitespace-nowrap">{progress.pct.toFixed(0)}% COMPLETE</span>
                 <span className="text-accent-blue bg-accent-blue/10 border border-accent-blue/20 px-1.5 sm:px-2 py-1 rounded font-bold animate-pulse shrink-0 whitespace-nowrap">
-                  â±ï¸ ELAPSED: {formatHHMMSS(elapsedTime)}
+                  ELAPSED: {formatHHMMSS(elapsedTime)}
                 </span>
                 <span className="text-violet-400 bg-violet-500/10 border border-violet-500/20 px-1.5 sm:px-2 py-1 rounded font-bold animate-pulse shrink-0 whitespace-nowrap">
-                  â³ REMAINING: {getRemainingTime()}
+                  REMAINING: {getRemainingTime()}
                 </span>
                 <span className="bg-green-500/10 text-green-400 border border-green-500/20 px-1.5 sm:px-2 py-1 rounded font-bold shrink-0 whitespace-nowrap">STATUS: ACTIVE</span>
               </div>
@@ -228,8 +228,8 @@ export function ValidationDebug({ progress, setProgress }: { progress: { pct: nu
                                cC > 0 ? "text-red-400" : "text-foreground/80"
                              )}>
                                {list.length} {expected ? `/ ${expected}` : ''}
-                               {okC > 0 ? ` (âœ“${okC})` : ''}
-                               {cC > 0 ? ` (âœ—${cC})` : ''}
+                               {okC > 0 ? ` (${okC})` : ''}
+                               {cC > 0 ? ` (${cC})` : ''}
                              </span>
                            </div>
                          );
@@ -474,9 +474,9 @@ export function ValidationDebug({ progress, setProgress }: { progress: { pct: nu
                             
                             {/* Status Badges */}
                             <div className="ml-auto flex gap-1">
-                              {okC > 0 && <span className="text-[10px] px-1.5 py-0.5 rounded bg-green-500/10 text-green-400 font-mono">âœ“ {okC}</span>}
-                              {wC > 0 && <span className="text-[10px] px-1.5 py-0.5 rounded bg-yellow-400/10 text-yellow-400 font-mono">âš  {wC}</span>}
-                              {cC > 0 && <span className="text-[10px] px-1.5 py-0.5 rounded bg-red-500/10 text-red-400 font-mono">âœ— {cC}</span>}
+                              {okC > 0 && <span className="text-[10px] px-1.5 py-0.5 rounded bg-green-500/10 text-green-400 font-mono">{okC}</span>}
+                              {wC > 0 && <span className="text-[10px] px-1.5 py-0.5 rounded bg-yellow-400/10 text-yellow-400 font-mono">{wC}</span>}
+                              {cC > 0 && <span className="text-[10px] px-1.5 py-0.5 rounded bg-red-500/10 text-red-400 font-mono">{cC}</span>}
                             </div>
                           </div>
                           
@@ -538,7 +538,7 @@ export function ValidationDebug({ progress, setProgress }: { progress: { pct: nu
                                       isOk ? "text-foreground/80" : "text-foreground/60"
                                     )}>
                                       <div className="w-4 text-center">
-                                        {isCritical ? 'âœ—' : isWarning ? 'âš ' : isOk ? 'âœ“' : 'â€¢'}
+                                        {isCritical ? '' : isWarning ? '' : isOk ? '' : ''}
                                       </div>
                                       <div className="flex-1 truncate" title={fileEntry.path}>{fileEntry.path.split('/').pop()}</div>
                                       {fileEntry.report?.reasons?.length > 0 && (

@@ -75,13 +75,14 @@ ipcMain.handle('load-chart-script', async (event, projectId) => {
   }
 });
 
-// IPC Handler: select-folder
-ipcMain.handle('select-folder', async () => {
-  const result = await dialog.showOpenDialog({
-    title: 'Select Output Folder for MATLAB Figures',
-    properties: ['openDirectory', 'createDirectory']
+// IPC Handler: select-zip-file
+ipcMain.handle('select-zip-file', async () => {
+  const result = await dialog.showSaveDialog({
+    title: 'Save MATLAB Export ZIP',
+    filters: [{ name: 'ZIP Archives', extensions: ['zip'] }],
+    defaultPath: 'MATLAB_Export.zip'
   });
-  return result.canceled ? null : result.filePaths[0];
+  return result.canceled ? null : result.filePath;
 });
 
 // IPC Handler: save-matlab-figures

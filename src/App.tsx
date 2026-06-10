@@ -157,14 +157,6 @@ export default function App() {
 
   const handleExportMatlab = async () => {
     try {
-      if (!(window as any).electronAPI) {
-        alert("Export as Fig (MATLAB) is only available in the Desktop App (.exe).\n\nBuild and run with: npm run electron:build");
-        return;
-      }
-
-      const outputFolder = await (window as any).electronAPI.selectOutputFolder();
-      if (!outputFolder) return;
-
       const request = indexedDB.open('ESS_Toolbox', 1);
       const getEvalData = () => new Promise((resolve) => {
         request.onsuccess = (e: any) => {
@@ -180,6 +172,39 @@ export default function App() {
         request.onerror = () => resolve(null);
       });
 
+      if (!(window as any).electronAPI) {
+        if (window.confirm("Generating .fig files requires the Desktop App (.exe).\n\nHowever, you can download a ZIP containing the raw MATLAB scripts (.m) and JSON data to run on your own MATLAB instance.\n\nWould you like to download the script bundle instead?")) {
+          const evalDataFromDB: any = await getEvalData();
+          if (!evalDataFromDB || !evalDataFromDB.timestamps) {
+            alert("No evaluation data found. Please load data in Daily Evaluation Graph first.");
+            return;
+          }
+          setProgress({ pct: 20, active: true, label: 'Preparing MATLAB script export...' });
+          const { exportMatlabScriptsToZip } = await import('./lib/exportMatlab');
+          const zipEntries: {name: string, data: Uint8Array}[] = [];
+          await exportMatlabScriptsToZip(project, evalDataFromDB, zipEntries, setProgress);
+          setProgress({ pct: 90, active: true, label: `Building ZIP archive...` });
+          
+          const bytes = hcBuildZip(zipEntries);
+          for (const e of zipEntries) (e as any).data = null;
+          
+          const blob = new Blob([bytes], { type: 'application/zip' });
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = `MATLAB_Scripts_${project}_${Date.now()}.zip`;
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          URL.revokeObjectURL(url);
+          setProgress({ pct: 0, active: false, label: '' });
+        }
+        return;
+      }
+
+      const outputZip = await (window as any).electronAPI.selectZipFile();
+      if (!outputZip) return;
+
       const evalData: any = await getEvalData();
       if (!evalData || !evalData.timestamps) {
         alert("No evaluation data found. Please load data in Daily Evaluation Graph first.");
@@ -190,7 +215,7 @@ export default function App() {
       setProgress({ pct: 45, active: true, label: 'Running MATLAB and generating .fig files...' });
 
       const result = await (window as any).electronAPI.saveMatlabFigures({
-        outputFolder,
+        outputZip,
         project,
         evalData
       });
@@ -198,10 +223,10 @@ export default function App() {
       if (result.success) {
         const fileList = (result.files || []).map((f: string) => `  • ${f}`).join('\n');
         alert(
-          `MATLAB .fig export completed.\n\n` +
-          `Folder:\n${outputFolder}\n\n` +
-          `Generated files:\n${fileList}\n\n` +
-          `Open any .fig file directly in MATLAB.`
+          `MATLAB Export completed successfully.\n\n` +
+          `Saved ZIP Archive:\n${outputZip}\n\n` +
+          `Generated .fig files included:\n${fileList}\n\n` +
+          `Extract the ZIP and open any .fig file directly in MATLAB.`
         );
       } else {
         alert(`MATLAB export failed:\n\n${result.error}`);
@@ -614,7 +639,7 @@ export default function App() {
                       >
                         <Archive size={14} className="group-hover:-translate-y-1 transition-transform" />
                         <span className="text-[10px] uppercase tracking-wider">
-                          Export as Fig (MATLAB)
+                          Export MATLAB Bundle (ZIP)
                         </span>
                       </button>
                       <button 

@@ -57,14 +57,17 @@ tlo = tiledlayout(3, 1, 'TileSpacing', 'compact', 'Padding', 'compact');
 title(tlo, '${title}', 'FontWeight', 'bold', 'FontSize', 12);
 
 % Function to format axes
-function formatAxis(ax, t)
+function formatAxis(ax, t, showLabels)
     xlim(ax, [min(t) max(t)]);
-    xtickformat(ax, 'HH:mm');
-    xtickangle(ax, 45);
-    % Try to set ticks every 30 mins
     try
         ax.XTick = dateshift(min(t), 'start', 'minute', 0) : minutes(30) : max(t);
     catch
+    end
+    if showLabels
+        xtickformat(ax, 'HH:mm');
+        xtickangle(ax, 45);
+    else
+        xticklabels(ax, {});
     end
 end
 
@@ -82,7 +85,7 @@ ax1.YColor = '#D95319';
 plot(t, freq, 'Color', '#D95319', 'LineWidth', ${graphConfig.lineWidths[1]});
 ylabel('F (Hz)');
 title('Frequency & Active Power');
-formatAxis(ax1, t);
+formatAxis(ax1, t, false);
 legend({'P total', 'Frequency'}, 'Location', 'northwest');
 
 % --- Row 2: SOC & Active Power ---
@@ -101,7 +104,7 @@ ax2.YColor = '#D95319';
 plot(t, soc, 'Color', '#D95319', 'LineWidth', ${graphConfig.lineWidths[3]});
 ylabel('SOC (%)');
 title('SOC & Active Power');
-formatAxis(ax2, t);
+formatAxis(ax2, t, false);
 legend({'P total', 'Remote Active Power', 'SOC'}, 'Location', 'northwest');
 
 % --- Row 3: Reactive Power & Voltage ---
@@ -122,7 +125,7 @@ plot(t, qTotal, 'Color', '#D95319', 'LineWidth', ${graphConfig.lineWidths[3]});
 stairs(t, cmdQ, 'Color', '#000000', 'LineWidth', ${graphConfig.lineWidths[4]}, 'LineStyle', '--');
 ylabel('Q (MVar)');
 title('Reactive Power & Voltage');
-formatAxis(ax3, t);
+formatAxis(ax3, t, true);
 legend({'Vab', 'Vbc', 'Vca', 'Q total'}, 'Location', 'northwest');
 
 linkaxes([ax1, ax2, ax3], 'x');
@@ -222,51 +225,74 @@ else
     set(fig, 'Color', [0.1 0.1 0.18]);
 end
 
+tlo = tiledlayout(${plants.length}, 1, 'TileSpacing', 'compact', 'Padding', 'compact');
+title(tlo, '${title}', 'FontWeight', 'bold', 'FontSize', 12);
+
 axs = [];
 `;
     plants.forEach((pk, i) => {
         script += `
 % --- ${pk} ---
-ax = subplot(${plants.length}, 1, ${i+1});
+ax = nexttile;
 axs = [axs, ax];
 yyaxis left;
 hold on;
 ${metric === 'f_p' ? `
+ax.YColor = '#0072BD';
 plot(t, data.pTotal.${pk}, 'Color', '#0072BD', 'LineWidth', ${graphConfig.lineWidths[0]});
 ylabel('P (MW)');
 yyaxis right;
+ax.YColor = '#D95319';
 plot(t, data.freq.${pk}, 'Color', '#D95319', 'LineWidth', ${graphConfig.lineWidths[1]});
 ylabel('F (Hz)');
-legend({'P total', 'Freq'}, 'Location', 'northeastoutside');
+legend({'P total', 'Freq'}, 'Location', 'northwest');
 ` : metric === 'soc_p' ? `
+ax.YColor = '#0072BD';
 plot(t, data.pTotal.${pk}, 'Color', '#0072BD', 'LineWidth', ${graphConfig.lineWidths[0]});
-stairs(t, data.cmdP.${pk}, 'Color', '#D95319', 'LineWidth', ${graphConfig.lineWidths[1]});
-plot(t, data.remoteP.${pk}, 'Color', '#731A66', 'LineWidth', ${graphConfig.lineWidths[2]});
+plot(t, data.remoteP.${pk}, 'Color', '#7E2F8E', 'LineWidth', ${graphConfig.lineWidths[2]});
 ylabel('P (MW)');
 yyaxis right;
+ax.YColor = '#D95319';
 plot(t, data.soc.${pk}, 'Color', '#D95319', 'LineWidth', ${graphConfig.lineWidths[3]});
 ylabel('SOC (%)');
-legend({'P total', 'P cmd', 'Remote P', 'SOC'}, 'Location', 'northeastoutside');
+legend({'P total', 'Remote Active Power', 'SOC'}, 'Location', 'northwest');
 ` : `
+ax.YColor = '#0072BD';
 plot(t, data.vab.${pk}, 'Color', '#0072BD', 'LineWidth', ${graphConfig.lineWidths[0]});
 plot(t, data.vbc.${pk}, 'Color', '#77AC30', 'LineWidth', ${graphConfig.lineWidths[1]});
 plot(t, data.vca.${pk}, 'Color', '#7E2F8E', 'LineWidth', ${graphConfig.lineWidths[2]});
 ylabel('V (kV)');
 yyaxis right;
+ax.YColor = '#D95319';
 plot(t, data.qTotal.${pk}, 'Color', '#D95319', 'LineWidth', ${graphConfig.lineWidths[3]});
-stairs(t, data.cmdQ.${pk}, 'Color', '#000000', 'LineWidth', ${graphConfig.lineWidths[4]});
+stairs(t, data.cmdQ.${pk}, 'Color', '#000000', 'LineWidth', ${graphConfig.lineWidths[4]}, 'LineStyle', '--');
 ylabel('Q (MVar)');
-legend({'Vab', 'Vbc', 'Vca', 'Q total', 'Q cmd'}, 'Location', 'northeastoutside');
+legend({'Vab', 'Vbc', 'Vca', 'Q total', 'Q cmd'}, 'Location', 'northwest');
 `}
 if ${graphConfig.showGrid ? 'true' : 'false'}
     grid on;
 end
+formatAxis(ax, t, ${i === plants.length - 1 ? 'true' : 'false'});
 title('Plant: ${pk}');
 `;
     });
     script += `
 linkaxes(axs, 'x');
-sgtitle('${title}');
+
+% Helper function to format axes
+function formatAxis(ax, t, showLabels)
+    xlim(ax, [min(t) max(t)]);
+    try
+        ax.XTick = dateshift(min(t), 'start', 'minute', 0) : minutes(30) : max(t);
+    catch
+    end
+    if showLabels
+        xtickformat(ax, 'HH:mm');
+        xtickangle(ax, 45);
+    else
+        xticklabels(ax, {});
+    end
+end
 `;
     return script;
   };
