@@ -262,45 +262,73 @@ export function ValidationDebug({ progress, setProgress }: { progress: { pct: nu
                       name: `... and ${rawFiles.length - 15} more files`,
                       size: ''
                     });
-                  }
-                  setUploadedFiles(filesList);
+            <div className="flex flex-col gap-2 mt-4">
+                {/* UPLOAD FILE BOX */}
+                <label 
+                  className={cn(
+                    "p-4 border-2 border-dashed rounded bg-surface border-border-v hover:bg-surface-hover hover:border-accent-blue/50 transition-colors flex flex-col items-center justify-center cursor-pointer text-center relative",
+                    isDragging && "bg-accent-blue/10 border-accent-blue"
+                  )}
+                  onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
+                  onDragLeave={(e) => { e.preventDefault(); setIsDragging(false); }}
+                  onDrop={handleDrop}
+                  onClick={() => archiveInputRef.current?.click()}
+                >
+                  <input 
+                    type="file" 
+                    ref={archiveInputRef} 
+                    className="hidden" 
+                    multiple 
+                    accept=".zip,.rar,.7z,.xlsx,.csv" 
+                    onChange={async (e) => {
+                      if (!e.target.files?.length) return;
+                      await hcBulkImport(e.target.files);
+                      e.target.value = '';
+                      setUploadMessage('Archive loaded successfully! Click RUN to start audit.');
+                      setTimeout(() => setUploadMessage(''), 5000);
+                    }}
+                  />
+                  <Upload size={20} className="mb-2 text-accent-blue opacity-70 pointer-events-none" />
+                  <div className="text-[10px] uppercase font-bold text-foreground/70 pointer-events-none">Upload File(s)</div>
+                </label>
 
-                  const files = rawFiles.map(f => ({ file: f, path: f.webkitRelativePath || f.name }));
-                  setPendingFiles(files);
-                  e.target.value = '';
-                  setUploadMessage('Folder selected successfully! Click RUN to start audit.');
-                  setTimeout(() => setUploadMessage(''), 5000);
-                }} 
-              />
-              <Upload size={24} className="mb-2 text-accent-blue opacity-70 pointer-events-none" />
-              <div className="text-[10px] uppercase font-bold text-foreground/70 pointer-events-none mb-3">Upload Archive</div>
-              <div className="flex gap-2 w-full pointer-events-auto">
-                <Button 
-                  onClick={(e) => { e.stopPropagation(); archiveInputRef.current?.click(); }}
-                  className="bg-accent-blue text-foreground hover:bg-blue-600 h-7 text-[9px] flex-1 font-bold px-0"
-                  disabled={getHcBusy()}
+                {/* UPLOAD FOLDER BOX */}
+                <label 
+                  className={cn(
+                    "p-4 border-2 border-dashed rounded bg-surface border-border-v hover:bg-surface-hover hover:border-accent-blue/50 transition-colors flex flex-col items-center justify-center cursor-pointer text-center relative",
+                    isDragging && "bg-accent-blue/10 border-accent-blue"
+                  )}
+                  onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
+                  onDragLeave={(e) => { e.preventDefault(); setIsDragging(false); }}
+                  onDrop={handleDrop}
+                  onClick={() => folderInputRef.current?.click()}
                 >
-                  File
-                </Button>
-                <Button 
-                  onClick={(e) => { e.stopPropagation(); folderInputRef.current?.click(); }}
-                  variant="outline" 
-                  className="border-border-v hover:bg-foreground/10 h-7 text-[9px] flex-1 text-foreground bg-transparent font-bold px-0"
-                  disabled={getHcBusy()}
-                >
-                  Folder
-                </Button>
+                  <input 
+                    type="file" 
+                    ref={folderInputRef} 
+                    className="hidden" 
+                    {...({webkitdirectory: "", directory: ""} as any)} 
+                    onChange={async (e) => {
+                      if (!e.target.files?.length) return;
+                      await hcBulkImport(e.target.files);
+                      e.target.value = '';
+                      setUploadMessage('Folder selected successfully! Click RUN to start audit.');
+                      setTimeout(() => setUploadMessage(''), 5000);
+                    }} 
+                  />
+                  <Upload size={20} className="mb-2 text-accent-blue opacity-70 pointer-events-none" />
+                  <div className="text-[10px] uppercase font-bold text-foreground/70 pointer-events-none">Upload Folder</div>
+                </label>
+                
+                {uploadMessage && (
+                  <div className={cn(
+                    "mt-1 text-[10px] px-2 py-1 rounded w-full text-center border font-mono tracking-wide",
+                    uploadMessage.includes('failed') ? "bg-red-500/10 text-red-500 border-red-500/20" : "bg-green-500/10 text-green-500 border-green-500/20"
+                  )}>
+                    {uploadMessage}
+                  </div>
+                )}
               </div>
-              {uploadMessage && (
-                <div className={cn(
-                  "mt-3 text-[10px] px-2 py-1 rounded w-full text-center border font-mono tracking-wide",
-                  uploadMessage.startsWith('Error') 
-                    ? "text-red-400 bg-red-500/10 border-red-500/20" 
-                    : "text-green-400 bg-green-500/10 border-green-500/20"
-                )}>
-                  {uploadMessage}
-                </div>
-              )}
 
               {/* Uploaded Archives/Folders List */}
               {uploadedFiles.length > 0 && (
