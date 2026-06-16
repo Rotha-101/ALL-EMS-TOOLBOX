@@ -136,6 +136,21 @@ export function ValidationDebug({ progress, setProgress }: { progress: { pct: nu
           Validation File Debug
         </div>
         <div className="flex items-center gap-2">
+                    <Button 
+            onClick={(e) => { e.stopPropagation(); handlePlantUpload(null, 'file'); }}
+            className="bg-accent-blue text-foreground hover:bg-blue-600 h-7 text-[10px] font-bold px-4"
+            disabled={getHcBusy()}
+          >
+            File
+          </Button>
+          <Button 
+            onClick={(e) => { e.stopPropagation(); handlePlantUpload(null, 'folder'); }}
+            variant="outline" 
+            className="border-border-v hover:bg-foreground/10 h-7 text-[10px] text-foreground bg-transparent font-bold px-4"
+            disabled={getHcBusy()}
+          >
+            Folder
+          </Button>
           <Button 
             className="bg-blue-600 text-white hover:bg-blue-500 h-7 text-[10px] font-bold shadow-none px-5 transition-all border-none"
             onClick={async () => {
@@ -237,36 +252,7 @@ export function ValidationDebug({ progress, setProgress }: { progress: { pct: nu
                  );
                })}
             </div>
-              {/* Global Upload Box */}
-              <div 
-                className={cn(
-                  "mt-4 border-2 border-dashed rounded-md p-4 flex flex-col items-center justify-center transition-colors text-center shrink-0",
-                  isDragging ? "bg-accent-blue/10 border-accent-blue/50" : "bg-background/20 hover:bg-background/40 border-border-v hover:border-border-v/80"
-                )}
-                onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
-                onDragLeave={(e) => { e.preventDefault(); setIsDragging(false); }}
-                onDrop={handleDrop}
-              >
-                <Upload size={24} className="mb-2 text-accent-blue opacity-70" />
-                <div className="text-[10px] uppercase font-bold text-foreground/70 mb-3">UPLOAD ARCHIVE</div>
-                <div className="flex gap-2 w-full">
-                  <Button 
-                    onClick={(e) => { e.stopPropagation(); handlePlantUpload(null, 'file'); }}
-                    className="bg-accent-blue text-foreground hover:bg-blue-600 h-7 text-[9px] flex-1 font-bold px-0"
-                    disabled={getHcBusy()}
-                  >
-                    File
-                  </Button>
-                  <Button 
-                    onClick={(e) => { e.stopPropagation(); handlePlantUpload(null, 'folder'); }}
-                    variant="outline" 
-                    className="border-border-v hover:bg-foreground/10 h-7 text-[9px] flex-1 text-foreground bg-transparent font-bold px-0"
-                    disabled={getHcBusy()}
-                  >
-                    Folder
-                  </Button>
-                </div>
-              </div>
+              
 
               {/* Processing Progress Tracker */}
               {progress.active && (
