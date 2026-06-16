@@ -136,47 +136,28 @@ export function ValidationDebug({ progress, setProgress }: { progress: { pct: nu
           Validation File Debug
         </div>
         <div className="flex items-center gap-2">
-                    <Button 
+          <Button 
             onClick={(e) => { e.stopPropagation(); handlePlantUpload(null, 'file'); }}
-            className="bg-accent-blue text-foreground hover:bg-blue-600 h-7 text-[10px] font-bold px-4"
+            className="bg-accent-blue text-foreground hover:bg-blue-600 h-7 text-[10px] font-bold px-6 shadow-none rounded-sm border-none"
             disabled={getHcBusy()}
           >
             File
           </Button>
           <Button 
             onClick={(e) => { e.stopPropagation(); handlePlantUpload(null, 'folder'); }}
-            variant="outline" 
-            className="border-border-v hover:bg-foreground/10 h-7 text-[10px] text-foreground bg-transparent font-bold px-4"
+            className="border border-border-v bg-surface hover:bg-foreground/10 h-7 text-[10px] text-foreground font-bold px-6 shadow-none rounded-sm"
             disabled={getHcBusy()}
           >
             Folder
           </Button>
           <Button 
-            className="bg-blue-600 text-white hover:bg-blue-500 h-7 text-[10px] font-bold shadow-none px-5 transition-all border-none"
-            onClick={async () => {
-              if (pendingFiles.length === 0) {
-                setUploadMessage('Please drop or select files first!');
-                setTimeout(() => setUploadMessage(''), 4000);
-                return;
-              }
-              const tStart = Date.now();
-              try {
-                setUploadMessage('');
-                await hcBulkImport(pendingFiles);
-                const duration = ((Date.now() - tStart) / 1000).toFixed(1);
-                setUploadMessage(`Audit complete in ${duration}s! Preview all plants below.`);
-                setTimeout(() => setUploadMessage(''), 8000);
-              } catch (err: any) {
-                console.error('RUN click error:', err);
-                setUploadMessage(`Error: ${err.message || String(err)}`);
-              }
-            }}
-            disabled={isRunning || pendingFiles.length === 0}
+            className="bg-[#383b63] text-foreground/80 h-7 text-[10px] font-bold px-6 shadow-none rounded-sm border-none opacity-50 cursor-not-allowed pointer-events-none hidden"
+            disabled
           >
             RUN
           </Button>
           <Button 
-            className="bg-red-600 text-white hover:bg-red-500 h-7 text-[10px] font-bold shadow-none px-5 transition-all border-none"
+            className="bg-red-600 text-white hover:bg-red-500 h-7 text-[10px] font-bold px-6 shadow-none rounded-sm border-none"
             onClick={() => {
               hcForceStop();
               hcResetActiveProject();
@@ -189,14 +170,14 @@ export function ValidationDebug({ progress, setProgress }: { progress: { pct: nu
           </Button>
           <div className="w-px h-5 bg-border-v mx-1"></div>
           <Button 
-            className="bg-red-600 text-white hover:bg-red-500 h-7 text-[10px] font-bold shadow-none px-5 transition-all border-none uppercase" 
+            className="bg-red-600 text-white hover:bg-red-500 h-7 text-[10px] font-bold px-6 shadow-none rounded-sm border-none uppercase"
             onClick={() => {
               if (confirm('Are you sure you want to clear data for all plants?')) {
                 currentPlants.forEach((plant: any) => hcClearPlantData(plant.id, true));
               }
             }}
           >
-            Clear All Data
+            CLEAR ALL DATA
           </Button>
         </div>
       </div>
