@@ -1,7 +1,8 @@
 import React from 'react';
 import type { PlantBlock } from '../lib/cycle-utils';
 
-export function PlantDetailTable({ blocks }: { blocks: PlantBlock[] }) {
+export function PlantDetailTable({ blocks = [] }: { blocks?: PlantBlock[] }) {
+  if (!blocks) blocks = [];
   return (
     <table className="w-full text-[10px] font-mono text-left border-collapse">
       <thead>

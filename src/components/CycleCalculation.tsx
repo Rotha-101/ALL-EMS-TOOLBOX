@@ -313,9 +313,9 @@ export function CycleCalculation({ project, theme }: { project: string, theme: '
           ['PlantName', 'DeviceName', 'ESS_Number', 'LastEquivalentNumberOfCycle', 'AverageCycleOfBlock', 'AverageCycleOfSPPC']
         ];
         
-        const allBlocks = [...r.p1Blocks, ...r.p2Blocks];
+        const allBlocks = [...(r.p1Blocks || []), ...(r.p2Blocks || [])];
         if (project !== 'SNTL400') {
-          allBlocks.push(...r.p3Blocks);
+          allBlocks.push(...(r.p3Blocks || []));
         }
         
         for (const b of allBlocks) {

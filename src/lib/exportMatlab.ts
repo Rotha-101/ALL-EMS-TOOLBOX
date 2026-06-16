@@ -378,8 +378,8 @@ end
     setProgress({ pct: 60 + ((i + 1) / total) * 30, active: true, label: `Generating MATLAB script ${i + 1} of ${total}: ${s.name}...` });
     const dateStr = (evalData.dataDate || '').replace(/-/g, '');
     const projLabel = project.includes('SNTL') ? project + 'MWH' : project;
-    const safeName = s.name.replace(/\s+/g, '_').replace(/SWG/g, 'SPPC-');
-    const prefix = `${i + 1}. ${dateStr}_${projLabel}_`;
+    const safeName = s.name.replace(/\s+/g, '_').replace(/SWG/g, 'SPPC_').replace(/-/g, '_');
+    const prefix = `${dateStr}_${projLabel}_`;
     
     zipEntries.push({
       name: `MATLAB_Export/${prefix}${safeName}.m`,
