@@ -4450,14 +4450,7 @@ export function DailyEvaluationGraph({
               <Upload size={12} />
               NCC Data
             </Button>
-            <Button
-              onClick={handleDownloadExcelLogs}
-              disabled={!evalData}
-              className="bg-green-600 hover:bg-green-500 text-white h-7 text-[9px] font-bold flex items-center gap-1.5 border-0 shadow-sm"
-            >
-              <Download size={12} />
-              Export Realtime Dispatch Excel
-            </Button>
+            
           </div>
         </div>
       )}
