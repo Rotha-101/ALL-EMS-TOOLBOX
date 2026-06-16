@@ -203,7 +203,7 @@ export default function App() {
           const url = URL.createObjectURL(blob);
           const a = document.createElement('a');
           a.href = url;
-          a.download = `MATLAB_Scripts_${project}_${Date.now()}.zip`;
+          a.download = `MATLAB_Scripts_${(evalDataFromDB.dataDate || '').replace(/[^a-zA-Z0-9-]/g, '_')}_${project}.zip`;
           document.body.appendChild(a);
           a.click();
           document.body.removeChild(a);

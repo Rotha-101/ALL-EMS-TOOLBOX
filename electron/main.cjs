@@ -85,11 +85,11 @@ ipcMain.handle('load-chart-script', async (event, projectId) => {
 });
 
 // IPC Handler: select-zip-file
-ipcMain.handle('select-zip-file', async () => {
+ipcMain.handle('select-zip-file', async (event, defaultName) => {
   const result = await dialog.showSaveDialog({
     title: 'Save MATLAB Export ZIP',
     filters: [{ name: 'ZIP Archives', extensions: ['zip'] }],
-    defaultPath: 'MATLAB_Export.zip'
+    defaultPath: defaultName || 'MATLAB_Export.zip'
   });
   return result.canceled ? null : result.filePath;
 });
