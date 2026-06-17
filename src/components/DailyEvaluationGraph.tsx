@@ -3797,6 +3797,9 @@ export function DailyEvaluationGraph({
 
   // Render plotly graphs
   // Render plotly graphs
+  const filterCache = useRef(new WeakMap());
+  const lastTimeHash = useRef('');
+
   const renderPlot = () => {
     // Large, beautiful glassmorphic Empty State Dropzone when no data is loaded
     if (!evalData) {
@@ -3813,12 +3816,20 @@ export function DailyEvaluationGraph({
     const pKey = selectedPlant;
 
     // Time array string for X-axis labels
-    const timeX = evalData.timestamps.map((t: Date) => {
-      const hh = String(t.getHours()).padStart(2, '0');
-      const mm = String(t.getMinutes()).padStart(2, '0');
-      const ss = String(t.getSeconds()).padStart(2, '0');
-      return `${hh}:${mm}:${ss}`;
-    });
+    // Cache timeX string conversion
+    let timeX = [];
+    if (filterCache.current.has(evalData.timestamps)) {
+        timeX = filterCache.current.get(evalData.timestamps);
+    } else {
+        timeX = evalData.timestamps.map((t: Date) => {
+          const d = new Date(t);
+          const hh = String(d.getHours()).padStart(2, '0');
+          const mm = String(d.getMinutes()).padStart(2, '0');
+          const ss = String(d.getSeconds()).padStart(2, '0');
+          return `${hh}:${mm}:${ss}`;
+        });
+        filterCache.current.set(evalData.timestamps, timeX);
+    }
 
     // Helper: format Date to full report timestamp tip (e.g. May 15, 2026, 14:41:14)
     const formatFullTime = (d: Date) => {
@@ -3833,8 +3844,20 @@ export function DailyEvaluationGraph({
     };
 
     // Helper: filter timeX & data arrays by graphConfig.timeFrom / timeTo
+    const currentTimeHash = `${graphConfig.timeFrom}_${graphConfig.timeTo}_${graphConfig.dataResolution}`;
+    if (lastTimeHash.current !== currentTimeHash) {
+       filterCache.current = new WeakMap();
+       lastTimeHash.current = currentTimeHash;
+    }
+
     const applyTimeRange = (dataArr: any[]) => {
+      if (!dataArr) return [];
       if (!graphConfig.timeFrom && !graphConfig.timeTo && (!graphConfig.dataResolution || graphConfig.dataResolution <= 1)) return dataArr;
+      
+      if (typeof dataArr === 'object' && filterCache.current.has(dataArr)) {
+         return filterCache.current.get(dataArr);
+      }
+
       const toSeconds = (t: string) => {
         const [h, m, s] = t.split(':').map(Number);
         return (h || 0) * 3600 + (m || 0) * 60 + (s || 0);
@@ -3843,11 +3866,17 @@ export function DailyEvaluationGraph({
       const toSec   = toSeconds(graphConfig.timeTo   || '23:59:59');
       let sliced = dataArr.slice(fromSec, toSec + 1);
       const step = graphConfig.dataResolution || 1;
+      let result = sliced;
       if (step > 1) {
-         sliced = sliced.filter((_: any, i: number) => i % step === 0);
+        result = sliced.filter((_, i) => i % step === 0);
       }
-      return sliced;
+      
+      if (typeof dataArr === 'object') {
+         filterCache.current.set(dataArr, result);
+      }
+      return result;
     };
+
     const filteredTimeX  = applyTimeRange(timeX);
     const filterArr      = (arr: any[]) => applyTimeRange(arr);
 
@@ -4002,7 +4031,7 @@ export function DailyEvaluationGraph({
     };
 
     if (activeMetric === 'f_p') {
-      const hasPlant3 = project !== 'SNTL400' && evalDataRaw.soc.plant3 && evalDataRaw.soc.plant3.some(v => !isNaN(v));
+      const hasPlant3 = project !== 'SNTL400' && evalData.soc.plant3 && evalData.soc.plant3.some(v => !isNaN(v));
       const drawPanel1 = (pk: 'plant1' | 'plant2' | 'plant3', title: string) => (
         <div className="h-[280px] w-full relative mb-1" key={pk}>
           <Plot
@@ -4028,7 +4057,7 @@ export function DailyEvaluationGraph({
     }
 
     if (activeMetric === 'soc_p') {
-      const hasPlant3 = project !== 'SNTL400' && evalDataRaw.soc.plant3 && evalDataRaw.soc.plant3.some(v => !isNaN(v));
+      const hasPlant3 = project !== 'SNTL400' && evalData.soc.plant3 && evalData.soc.plant3.some(v => !isNaN(v));
       const drawPanel2 = (pk: 'plant1' | 'plant2' | 'plant3', title: string) => (
         <div className="h-[280px] w-full relative mb-1" key={pk}>
           <Plot
