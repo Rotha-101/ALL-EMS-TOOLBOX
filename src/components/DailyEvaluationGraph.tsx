@@ -1166,7 +1166,7 @@ export function DailyEvaluationGraph({
     }
   };
 
-  const handleExportHtml = () => {
+  const handleExportHtml = async () => {
     if (!evalData) return;
 
     // Convert timestamps to string representation for serialization
@@ -2426,7 +2426,28 @@ export function DailyEvaluationGraph({
 </body>
 </html>`;
 
-    const blob = new Blob([htmlContent], { type: 'text/html;charset=utf-8' });
+        const blob = new Blob([htmlContent], { type: 'text/html;charset=utf-8' });
+    try {
+      if ('showSaveFilePicker' in window) {
+        const handle = await (window as any).showSaveFilePicker({
+          suggestedName: `${project}_${activeMetric}_${selectedPlant}.html`,
+          types: [{
+            description: 'HTML File',
+            accept: { 'text/html': ['.html'] },
+          }],
+        });
+        const writable = await handle.createWritable();
+        await writable.write(blob);
+        await writable.close();
+        return;
+      }
+    } catch (e: any) {
+      if (e.name !== 'AbortError') {
+        console.error('Failed to save file:', e);
+      }
+      return;
+    }
+
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
@@ -2434,12 +2455,9 @@ export function DailyEvaluationGraph({
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
-    
-    // Open in a new window/tab
-    window.open(url, '_blank');
   };
 
-  const handleExportAllHtml = () => {
+  const handleExportAllHtml = async () => {
     if (!evalData) return;
 
     // Convert timestamps to string representation for serialization
@@ -3746,7 +3764,28 @@ export function DailyEvaluationGraph({
 </body>
 </html>`;
 
-    const blob = new Blob([htmlContent], { type: 'text/html;charset=utf-8' });
+        const blob = new Blob([htmlContent], { type: 'text/html;charset=utf-8' });
+    try {
+      if ('showSaveFilePicker' in window) {
+        const handle = await (window as any).showSaveFilePicker({
+          suggestedName: `${project}_All_Graphs.html`,
+          types: [{
+            description: 'HTML File',
+            accept: { 'text/html': ['.html'] },
+          }],
+        });
+        const writable = await handle.createWritable();
+        await writable.write(blob);
+        await writable.close();
+        return;
+      }
+    } catch (e: any) {
+      if (e.name !== 'AbortError') {
+        console.error('Failed to save file:', e);
+      }
+      return;
+    }
+
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
@@ -3754,9 +3793,6 @@ export function DailyEvaluationGraph({
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
-    
-    // Open in a new window/tab
-    window.open(url, '_blank');
   };
 
   // Render plotly graphs
