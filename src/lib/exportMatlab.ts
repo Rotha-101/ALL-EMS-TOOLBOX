@@ -214,7 +214,7 @@ plot(t, freq, '-', 'Color', '#D95319', 'LineWidth', ${graphConfig.lineWidths[1]}
 ylabel('F (Hz)'); ylim(centeredYLim(freq, F_center, 1.05));
 title('Frequency & Active Power');
 legend({'P total', 'Frequency'}, 'Location', 'northwest');
-formatAxis(ax, t, false);
+formatAxis(ax, t, true);
 
 % --- Tile 2: SOC & Active Power ---
 ax = nexttile; axs = [axs, ax];
@@ -242,7 +242,7 @@ ylabel('SOC (%)');
 legH(end+1) = pSOC; legT{end+1} = 'SOC';
 title('SOC & Active Power');
 legend(legH, legT, 'Location', 'northwest');
-formatAxis(ax, t, false);
+formatAxis(ax, t, true);
 
 % --- Tile 3: Reactive Power & Voltage ---
 ax = nexttile; axs = [axs, ax];
@@ -352,7 +352,7 @@ end
 
 title('${plantNameMap[pk]} | Active Power & SOC');
 legend(legH, legT, 'Location', 'northwest');
-formatAxis(ax, t, ${i === plants.length - 1 ? 'true' : 'false'});
+formatAxis(ax, t, true);
 `;
     });
     script += `
@@ -463,7 +463,7 @@ ylabel('Q (MVar)'); ylim(centeredYLim(yDataQ, Q_center_MVar, 1.05));
 
 title('${plantNameMap[pk]} | Reactive Power & Voltage');
 legend(legH, legT, 'Location', 'northwest');
-formatAxis(ax, t, ${i === plants.length - 1 ? 'true' : 'false'});
+formatAxis(ax, t, true);
 `;
     });
     script += `
