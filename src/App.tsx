@@ -234,12 +234,16 @@ export default function App() {
       }
 
       setProgress({ pct: 20, active: true, label: 'Preparing MATLAB export...' });
+      const { generateAllMatlabScripts } = await import('./lib/exportMatlab');
+      const scripts = generateAllMatlabScripts(project, evalData);
+
       setProgress({ pct: 45, active: true, label: 'Running MATLAB and generating .fig files...' });
 
       const result = await (window as any).electronAPI.saveMatlabFigures({
         outputZip,
         project,
-        evalData
+        evalData,
+        scripts
       });
 
       if (result.success) {
