@@ -10,10 +10,13 @@ export default defineConfig(({ mode }) => {
     plugins: [react(), tailwindcss()],
     define: {
       'process.env.GEMINI_API_KEY': JSON.stringify(env.GEMINI_API_KEY),
+      global: 'window',
     },
     resolve: {
       alias: {
         '@': path.resolve(__dirname, '.'),
+        'stream': path.resolve(__dirname, 'src/powerflow/lib/stream-mock.js'),
+        'assert': path.resolve(__dirname, 'src/powerflow/lib/assert-mock.js'),
       },
     },
     server: {

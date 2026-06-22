@@ -57,6 +57,7 @@ import { CycleCalculation } from './components/CycleCalculation';
 import { DailyEvaluationGraph } from './components/DailyEvaluationGraph';
 import { SettingsWindow } from './components/SettingsWindow';
 import { GlobalProgressModal } from './components/GlobalProgressModal';
+import { ImportMatCodePage } from './powerflow/pages/ImportMatCodePage';
 
 export { DailyEvaluationGraph } from './components/DailyEvaluationGraph';
 
@@ -551,9 +552,8 @@ export default function App() {
               <NavItem icon={<Activity size={14} />} label="Validation File Debug" active={activeTab === 'signal'} onClick={() => switchTab('signal')} />
               <NavItem icon={<Zap size={14} />} label="Cycle Calculation" active={activeTab === 'power'} onClick={() => switchTab('power')} />
               <NavItem icon={<Battery size={14} />} label="Daily Evaluation Graph" active={activeTab === 'soc'} onClick={() => switchTab('soc')} />
+              <NavItem icon={<FileCode size={14} />} label="Import MATCODE" active={activeTab === 'matcode'} onClick={() => switchTab('matcode')} />
               <NavItem icon={<Download size={14} />} label="Report Export" active={activeTab === 'export'} onClick={() => switchTab('export')} />
-
-
               <NavItem icon={<Bot size={14} />} label="AI Agent" active={activeTab === 'ai'} onClick={() => switchTab('ai')} />
             </div>
           </div>
@@ -669,6 +669,8 @@ export default function App() {
             <CycleCalculation project={project} theme={theme} />
           ) : activeTab === 'soc' ? (
             <DailyEvaluationGraph theme={theme} project={project} onNavigateToAI={() => switchTab('ai')} />
+          ) : activeTab === 'matcode' ? (
+            <ImportMatCodePage theme={theme as 'dark' | 'light'} project={project} active={true} />
           ) : activeTab === 'export' ? (
             (() => {
               const currentPlants = hcByProject[project] || [];

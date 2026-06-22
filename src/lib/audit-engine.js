@@ -900,7 +900,6 @@ const HC_TYPE_TO_CAT = (() => {
 
 // Project / plant state. Each project has its own list of default plants,
 // and each plant carries its own per-category expected file count.
-// (POC is always 3 across projects; ESR is ESS × 6 unless explicitly noted.)
 const HC_PROJECTS = [
   { id: 'SNTL400', label: 'SNTL400', defaultPlants: [
     { name: 'Plant_01', expected: { POC: 3, ESS: 50, SmartLogger: 13, ESR: 50 * 6, ESM: 50 * 48 } },
@@ -912,10 +911,26 @@ const HC_PROJECTS = [
     { name: 'Plant_03', expected: { POC: 3, ESS: 43, SmartLogger: 11, ESR: 43 * 6, ESM: 43 * 48 } },
   ]},
   { id: 'SNTL1000', label: 'SNTL1000', defaultPlants: [
-    // Per-plant breakdown not yet specified — only POC count is known. ESS/SL/ESR/ESM show as "N files" with no warning.
-    { name: 'Plant_01', expected: { POC: 3 } },
-    { name: 'Plant_02', expected: { POC: 3 } },
-    { name: 'Plant_03', expected: { POC: 3 } },
+    { name: 'Plant_01', expected: { POC: 3, ESS: 0, SmartLogger: 0, ESR: 0, ESM: 0 } },
+    { name: 'Plant_02', expected: { POC: 3, ESS: 0, SmartLogger: 0, ESR: 0, ESM: 0 } },
+    { name: 'Plant_03', expected: { POC: 3, ESS: 0, SmartLogger: 0, ESR: 0, ESM: 0 } },
+    { name: 'Plant_04', expected: { POC: 3, ESS: 0, SmartLogger: 0, ESR: 0, ESM: 0 } },
+    { name: 'Plant_05', expected: { POC: 3, ESS: 0, SmartLogger: 0, ESR: 0, ESM: 0 } },
+  ]},
+  { id: 'SNTB', label: 'SNTB 30MWH', defaultPlants: [
+    { name: 'Plant_01', expected: { POC: 3, ESS: 50, SmartLogger: 13, ESR: 300, ESM: 2400 } },
+  ]},
+  { id: 'SNTV', label: 'SNTV 12MWH', defaultPlants: [
+    { name: 'Plant_01', expected: { POC: 3, ESS: 20, SmartLogger: 5, ESR: 120, ESM: 960 } },
+  ]},
+  { id: 'SNTD_DMF', label: 'SNTD-DMF 18MWH', defaultPlants: [
+    { name: 'Plant_01', expected: { POC: 3, ESS: 30, SmartLogger: 8, ESR: 180, ESM: 1440 } },
+  ]},
+  { id: 'SNTZ', label: 'SNTZ 3MWH', defaultPlants: [
+    { name: 'Plant_01', expected: { POC: 3, ESS: 5, SmartLogger: 2, ESR: 30, ESM: 240 } },
+  ]},
+  { id: 'MSGP', label: 'MSGP 14MWH', defaultPlants: [
+    { name: 'Plant_01', expected: { POC: 3, ESS: 24, SmartLogger: 6, ESR: 144, ESM: 1152 } },
   ]},
 ];
 const hcByProject = {};   // projectId -> [plant, plant, ...]

@@ -650,9 +650,21 @@ export function DailyEvaluationGraph({
             }
           }
           if (allParsedRows.length > 0) {
-            const SPPC1_SACU = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 16, 17];
-            const SPPC2_SACU = [15, 18, 21, 24, 27, 30, 31, 32, 33, 34];
-            const SPPC3_SACU = [19, 20, 22, 23, 25, 26, 28, 29, 35, 36, 37];
+            let SPPC1_SACU: number[] = [];
+            let SPPC2_SACU: number[] = [];
+            let SPPC3_SACU: number[] = [];
+            
+            if (project === 'SNTL400') {
+              SPPC1_SACU = [1, 2, 3, 4, 5, 6, 8, 9, 10, 12, 19, 20, 23];
+              SPPC2_SACU = [7, 11, 13, 14, 15, 16, 17, 21, 22, 24, 25];
+            } else if (project === 'SNTL600') {
+              SPPC1_SACU = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 16, 17];
+              SPPC2_SACU = [15, 18, 21, 24, 27, 30, 31, 32, 33, 34];
+              SPPC3_SACU = [19, 20, 22, 23, 25, 26, 28, 29, 35, 36, 37];
+            } else {
+              SPPC1_SACU = Array.from({length: 100}, (_, i) => i + 1);
+            }
+
             
             let p1Rows = allParsedRows.filter(r => SPPC1_SACU.includes(r.SACU_Number));
             let p2Rows = allParsedRows.filter(r => SPPC2_SACU.includes(r.SACU_Number));
@@ -1200,7 +1212,8 @@ export function DailyEvaluationGraph({
             });
           };
 
-          const hasPlant3 = project !== 'SNTL400' && evalData.soc.plant3 && evalData.soc.plant3.some((v: any) => !isNaN(v));
+          const isBessProject = typeof project === 'string' && (project.startsWith('SNTB') || project.startsWith('SNTV') || project.startsWith('SNTD') || project.startsWith('SNTZ') || project.startsWith('MSGP'));
+          const hasPlant3 = !isBessProject && project !== 'SNTL400' && evalData.soc.plant3 && evalData.soc.plant3.some((v: any) => !isNaN(v));
           const getStatus = (val: number) => val < 0.5 ? 'Take action' : val < 0.8 ? 'Warning' : (project === 'SNTL400' && val > 1 ? 'Alert' : 'Normal');
 
           if (i === 0) {
@@ -1835,7 +1848,8 @@ export function DailyEvaluationGraph({
               });
             };
 
-            const hasPlant3 = typeof project !== 'undefined' && project !== 'SNTL400' && evalDataRaw.soc.plant3 && evalDataRaw.soc.plant3.some(v => !isNaN(v));
+            const isBessProject = typeof project === 'string' && (project.startsWith('SNTB') || project.startsWith('SNTV') || project.startsWith('SNTD') || project.startsWith('SNTZ') || project.startsWith('MSGP'));
+            const hasPlant3 = !isBessProject && typeof project !== 'undefined' && project !== 'SNTL400' && evalDataRaw.soc.plant3 && evalDataRaw.soc.plant3.some(v => !isNaN(v));
             const prj = typeof project !== 'undefined' ? project : 'Unknown';
             const getStatus = (val) => val < 0.5 ? 'Take action' : val < 0.8 ? 'Warning' : (prj === 'SNTL400' && val > 1 ? 'Alert' : 'Normal');
 
@@ -2271,8 +2285,9 @@ export function DailyEvaluationGraph({
         toImageButtonOptions: { format: 'png', filename: 'plot_export', scale: 2 }
       };
 
-      const hasPlant3 = project !== 'SNTL400' && evalDataRaw.soc.plant3 && evalDataRaw.soc.plant3.some(v => !isNaN(v));
-      const plants = ['plant1', 'plant2'];
+      const isBessProject = typeof project === 'string' && (project.startsWith('SNTB') || project.startsWith('SNTV') || project.startsWith('SNTD') || project.startsWith('SNTZ') || project.startsWith('MSGP'));
+      const hasPlant3 = !isBessProject && project !== 'SNTL400' && evalDataRaw.soc.plant3 && evalDataRaw.soc.plant3.some(v => !isNaN(v));
+      const plants = isBessProject ? ['plant1'] : ['plant1', 'plant2'];
       if (hasPlant3) plants.push('plant3');
 
       const drawPanelTitle = (pk) => {
@@ -3329,7 +3344,8 @@ export function DailyEvaluationGraph({
               });
             };
 
-            const hasPlant3 = evalDataRaw.soc.plant3 && evalDataRaw.soc.plant3.some(v => !isNaN(v));
+            const isBessProject = typeof project === 'string' && (project.startsWith('SNTB') || project.startsWith('SNTV') || project.startsWith('SNTD') || project.startsWith('SNTZ') || project.startsWith('MSGP'));
+            const hasPlant3 = !isBessProject && evalDataRaw.soc.plant3 && evalDataRaw.soc.plant3.some(v => !isNaN(v));
             const prj = typeof project !== 'undefined' ? project : 'Unknown';
             const getStatus = (val) => val < 0.5 ? 'Take action' : val < 0.8 ? 'Warning' : (prj === 'SNTL400' && val > 1 ? 'Alert' : 'Normal');
 
@@ -3762,8 +3778,9 @@ export function DailyEvaluationGraph({
         toImageButtonOptions: { format: 'png', filename: 'plot_export', scale: 2 }
       };
 
-      const hasPlant3 = project !== 'SNTL400' && evalDataRaw.soc.plant3 && evalDataRaw.soc.plant3.some(v => !isNaN(v));
-      const plants = ['plant1', 'plant2'];
+      const isBessProject = typeof project === 'string' && (project.startsWith('SNTB') || project.startsWith('SNTV') || project.startsWith('SNTD') || project.startsWith('SNTZ') || project.startsWith('MSGP'));
+      const hasPlant3 = !isBessProject && project !== 'SNTL400' && evalDataRaw.soc.plant3 && evalDataRaw.soc.plant3.some(v => !isNaN(v));
+      const plants = isBessProject ? ['plant1'] : ['plant1', 'plant2'];
       if (hasPlant3) plants.push('plant3');
 
       const drawPanelTitle = (pk) => {
@@ -4443,7 +4460,8 @@ export function DailyEvaluationGraph({
     };
 
     if (activeMetric === 'f_p') {
-      const hasPlant3 = project !== 'SNTL400' && evalData.soc.plant3 && evalData.soc.plant3.some(v => !isNaN(v));
+      const isBessProject = typeof project === 'string' && (project.startsWith('SNTB') || project.startsWith('SNTV') || project.startsWith('SNTD') || project.startsWith('SNTZ') || project.startsWith('MSGP'));
+      const hasPlant3 = !isBessProject && project !== 'SNTL400' && evalData.soc.plant3 && evalData.soc.plant3.some(v => !isNaN(v));
       const drawPanel1 = (pk: 'plant1' | 'plant2' | 'plant3', title: string) => (
         <div className="h-[280px] w-full relative mb-1" key={pk}>
           <Plot
@@ -4469,7 +4487,8 @@ export function DailyEvaluationGraph({
     }
 
     if (activeMetric === 'soc_p') {
-      const hasPlant3 = project !== 'SNTL400' && evalData.soc.plant3 && evalData.soc.plant3.some(v => !isNaN(v));
+      const isBessProject = typeof project === 'string' && (project.startsWith('SNTB') || project.startsWith('SNTV') || project.startsWith('SNTD') || project.startsWith('SNTZ') || project.startsWith('MSGP'));
+      const hasPlant3 = !isBessProject && project !== 'SNTL400' && evalData.soc.plant3 && evalData.soc.plant3.some(v => !isNaN(v));
       const drawPanel2 = (pk: 'plant1' | 'plant2' | 'plant3', title: string) => (
         <div className="h-[280px] w-full relative mb-1" key={pk}>
           <Plot
@@ -4497,7 +4516,8 @@ export function DailyEvaluationGraph({
     }
 
     if (activeMetric === 'v_q') {
-      const hasPlant3 = project !== 'SNTL400' && evalData.soc.plant3 && evalData.soc.plant3.some(v => !isNaN(v));
+      const isBessProject = typeof project === 'string' && (project.startsWith('SNTB') || project.startsWith('SNTV') || project.startsWith('SNTD') || project.startsWith('SNTZ') || project.startsWith('MSGP'));
+      const hasPlant3 = !isBessProject && project !== 'SNTL400' && evalData.soc.plant3 && evalData.soc.plant3.some(v => !isNaN(v));
       const drawPanel3 = (pk: 'plant1' | 'plant2' | 'plant3', title: string) => (
         <div className="h-[280px] w-full relative mb-1" key={pk}>
           <Plot
@@ -4580,7 +4600,8 @@ export function DailyEvaluationGraph({
 
 
     if (activeMetric === 'fig4') {
-      const hasPlant3 = project !== 'SNTL400' && evalData.soc.plant3 && evalData.soc.plant3.some(v => !isNaN(v));
+      const isBessProject = typeof project === 'string' && (project.startsWith('SNTB') || project.startsWith('SNTV') || project.startsWith('SNTD') || project.startsWith('SNTZ') || project.startsWith('MSGP'));
+      const hasPlant3 = !isBessProject && project !== 'SNTL400' && evalData.soc.plant3 && evalData.soc.plant3.some(v => !isNaN(v));
       const drawPanel4 = (pk: 'plant1' | 'plant2' | 'plant3', title: string) => (
         <div className="flex flex-col w-full border-b-[3px] border-border-v/50 pb-4 mb-4" key={pk}>
           <div className="text-center text-[12px] tracking-wider mb-2 font-sans font-bold" style={{ color: graphConfig.bgWhite ? '#000000' : '#E0E0E0' }}>
@@ -4636,7 +4657,8 @@ export function DailyEvaluationGraph({
     }
 
     if (activeMetric === 'fig5') {
-      const hasPlant3 = project !== 'SNTL400' && evalData.soc.plant3 && evalData.soc.plant3.some(v => !isNaN(v));
+      const isBessProject = typeof project === 'string' && (project.startsWith('SNTB') || project.startsWith('SNTV') || project.startsWith('SNTD') || project.startsWith('SNTZ') || project.startsWith('MSGP'));
+      const hasPlant3 = !isBessProject && project !== 'SNTL400' && evalData.soc.plant3 && evalData.soc.plant3.some(v => !isNaN(v));
       const avgDaily = (evalData.dailyCycle.plant1 + evalData.dailyCycle.plant2 + (hasPlant3 ? evalData.dailyCycle.plant3 : 0)) / (hasPlant3 ? 3 : 2);
       const avgTotal = (evalData.totalCycle.plant1 + evalData.totalCycle.plant2 + (hasPlant3 ? evalData.totalCycle.plant3 : 0)) / (hasPlant3 ? 3 : 2);
 
@@ -4836,7 +4858,8 @@ export function DailyEvaluationGraph({
     }
 
     if (activeMetric === 'fig6') {
-      const hasPlant3 = project !== 'SNTL400' && evalData.soc.plant3 && evalData.soc.plant3.some(v => !isNaN(v));
+      const isBessProject = typeof project === 'string' && (project.startsWith('SNTB') || project.startsWith('SNTV') || project.startsWith('SNTD') || project.startsWith('SNTZ') || project.startsWith('MSGP'));
+      const hasPlant3 = !isBessProject && project !== 'SNTL400' && evalData.soc.plant3 && evalData.soc.plant3.some(v => !isNaN(v));
       const drawPanel6 = (pk: 'plant1' | 'plant2' | 'plant3', title: string) => (
         <div className="h-[280px] w-full relative mb-1" key={pk}>
           <Plot

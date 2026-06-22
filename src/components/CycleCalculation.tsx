@@ -112,9 +112,21 @@ export function CycleCalculation({ project, theme }: { project: string, theme: '
         }
         
         // SACU project groups
-        const SPPC1_SACU = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 16, 17];
-        const SPPC2_SACU = [15, 18, 21, 24, 27, 30, 31, 32, 33, 34];
-        const SPPC3_SACU = [19, 20, 22, 23, 25, 26, 28, 29, 35, 36, 37];
+        let SPPC1_SACU: number[] = [];
+        let SPPC2_SACU: number[] = [];
+        let SPPC3_SACU: number[] = [];
+        
+        if (project === 'SNTL400') {
+          SPPC1_SACU = [1, 2, 3, 4, 5, 6, 8, 9, 10, 12, 19, 20, 23];
+          SPPC2_SACU = [7, 11, 13, 14, 15, 16, 17, 21, 22, 24, 25];
+        } else if (project === 'SNTL600') {
+          SPPC1_SACU = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 16, 17];
+          SPPC2_SACU = [15, 18, 21, 24, 27, 30, 31, 32, 33, 34];
+          SPPC3_SACU = [19, 20, 22, 23, 25, 26, 28, 29, 35, 36, 37];
+        } else {
+          // Fallback for BESS / generic projects
+          SPPC1_SACU = Array.from({length: 100}, (_, i) => i + 1);
+        }
         
         let p1Rows = allParsedRows.filter(r => SPPC1_SACU.includes(r.SACU_Number));
         let p2Rows = allParsedRows.filter(r => SPPC2_SACU.includes(r.SACU_Number));
@@ -278,6 +290,9 @@ export function CycleCalculation({ project, theme }: { project: string, theme: '
     await parseAndCalculateCycle(finalFiles);
   };
 
+  const isBessProject = typeof project === 'string' && (project.startsWith('SNTB') || project.startsWith('SNTV') || project.startsWith('SNTD') || project.startsWith('SNTZ') || project.startsWith('MSGP'));
+
+
   const handleDownloadWorkbook = () => {
     if (dailyResults.length === 0) return;
     
@@ -365,7 +380,7 @@ export function CycleCalculation({ project, theme }: { project: string, theme: '
 
   const fontColor = theme === 'dark' ? '#E0E0E0' : '#111827';
   const gridColor = theme === 'dark' ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)';
-  const projectBlockCount = project === 'SNTL400' ? 26 : 37;
+  const projectBlockCount = project === 'SNTL400' ? 24 : 37;
 
   const formatCycleMetric = (value: number | null | undefined, signed = false) => {
     if (value === null || value === undefined || Number.isNaN(value)) {
@@ -684,7 +699,7 @@ export function CycleCalculation({ project, theme }: { project: string, theme: '
                 <div className="absolute top-0 right-0 w-24 h-24 bg-accent-blue/5 rounded-full blur-2xl pointer-events-none"></div>
                 <div className="flex justify-between items-center mb-1">
                   <span className="text-foreground/45 text-[9px] uppercase tracking-widest font-mono">SWG01 (Plant 01)</span>
-                  <span className="text-[10px] font-mono font-bold text-green-500">16 SACU Blocks</span>
+                  <span className="text-[10px] font-mono font-bold text-green-500">{project === 'SNTL400' ? 13 : (isBessProject ? 'Total' : 16)} SACU Blocks</span>
                 </div>
                 <div className="flex items-baseline justify-between mt-1">
                   <span className="text-2xl font-mono font-bold text-foreground/90">
@@ -704,31 +719,33 @@ export function CycleCalculation({ project, theme }: { project: string, theme: '
               </div>
 
               {/* Plant 2 Card */}
-              <div className="bg-surface border border-border-v rounded-md p-3.5 flex flex-col justify-between relative overflow-hidden shadow-sm hover:border-accent-blue/30 transition-all">
-                <div className="absolute top-0 right-0 w-24 h-24 bg-accent-blue/5 rounded-full blur-2xl pointer-events-none"></div>
-                <div className="flex justify-between items-center mb-1">
-                  <span className="text-foreground/45 text-[9px] uppercase tracking-widest font-mono">SWG02 (Plant 02)</span>
-                  <span className="text-[10px] font-mono font-bold text-green-500">10 SACU Blocks</span>
+              {!isBessProject && (
+                <div className="bg-surface border border-border-v rounded-md p-3.5 flex flex-col justify-between relative overflow-hidden shadow-sm hover:border-accent-blue/30 transition-all">
+                  <div className="absolute top-0 right-0 w-24 h-24 bg-accent-blue/5 rounded-full blur-2xl pointer-events-none"></div>
+                  <div className="flex justify-between items-center mb-1">
+                    <span className="text-foreground/45 text-[9px] uppercase tracking-widest font-mono">SWG02 (Plant 02)</span>
+                    <span className="text-[10px] font-mono font-bold text-green-500">{project === 'SNTL400' ? 11 : 10} SACU Blocks</span>
+                  </div>
+                  <div className="flex items-baseline justify-between mt-1">
+                    <span className="text-2xl font-mono font-bold text-foreground/90">
+                      {selectedDay.SWG02_TotalCycle !== null ? selectedDay.SWG02_TotalCycle.toFixed(4) : '---.----'}
+                    </span>
+                    <span className={cn(
+                      "text-[10px] font-mono font-bold px-1.5 py-0.5 rounded",
+                      selectedDay.SWG02_DailyReached !== null && selectedDay.SWG02_DailyReached >= 0 
+                        ? "bg-green-500/10 text-green-400"
+                        : "bg-foreground/5 text-foreground/45"
+                    )}>
+                      {selectedDay.SWG02_DailyReached !== null 
+                        ? `+${selectedDay.SWG02_DailyReached.toFixed(4)}` 
+                        : '---.----'}
+                    </span>
+                  </div>
                 </div>
-                <div className="flex items-baseline justify-between mt-1">
-                  <span className="text-2xl font-mono font-bold text-foreground/90">
-                    {selectedDay.SWG02_TotalCycle !== null ? selectedDay.SWG02_TotalCycle.toFixed(4) : '---.----'}
-                  </span>
-                  <span className={cn(
-                    "text-[10px] font-mono font-bold px-1.5 py-0.5 rounded",
-                    selectedDay.SWG02_DailyReached !== null && selectedDay.SWG02_DailyReached >= 0 
-                      ? "bg-green-500/10 text-green-400"
-                      : "bg-foreground/5 text-foreground/45"
-                  )}>
-                    {selectedDay.SWG02_DailyReached !== null 
-                      ? `+${selectedDay.SWG02_DailyReached.toFixed(4)}` 
-                      : '---.----'}
-                  </span>
-                </div>
-              </div>
+              )}
 
               {/* Plant 3 Card (Hidden for SNTL400!) */}
-              {project !== 'SNTL400' && (
+              {!isBessProject && project !== 'SNTL400' && (
                 <div className="bg-surface border border-border-v rounded-md p-3.5 flex flex-col justify-between relative overflow-hidden shadow-sm hover:border-accent-blue/30 transition-all">
                   <div className="absolute top-0 right-0 w-24 h-24 bg-accent-blue/5 rounded-full blur-2xl pointer-events-none"></div>
                   <div className="flex justify-between items-center mb-1">
@@ -782,18 +799,20 @@ export function CycleCalculation({ project, theme }: { project: string, theme: '
                 >
                   SWG01 (Plant 01)
                 </button>
-                <button
-                  onClick={() => setActivePlantTab('p2')}
-                  className={cn(
-                    "px-3 py-1.5 rounded text-[10px] font-bold uppercase tracking-wider font-mono border transition-all",
-                    activePlantTab === 'p2'
-                      ? "bg-accent-blue text-foreground border-accent-blue shadow-[0_0_8px_rgba(59,130,246,0.25)]"
-                      : "bg-foreground/5 border-foreground/10 text-foreground/60 hover:text-foreground hover:bg-foreground/10"
-                  )}
-                >
-                  SWG02 (Plant 02)
-                </button>
-                {project !== 'SNTL400' && (
+                {!isBessProject && (
+                  <button
+                    onClick={() => setActivePlantTab('p2')}
+                    className={cn(
+                      "px-3 py-1.5 rounded text-[10px] font-bold uppercase tracking-wider font-mono border transition-all",
+                      activePlantTab === 'p2'
+                        ? "bg-accent-blue text-foreground border-accent-blue shadow-[0_0_8px_rgba(59,130,246,0.25)]"
+                        : "bg-foreground/5 border-foreground/10 text-foreground/60 hover:text-foreground hover:bg-foreground/10"
+                    )}
+                  >
+                    SWG02 (Plant 02)
+                  </button>
+                )}
+                {!isBessProject && project !== 'SNTL400' && (
                   <button
                     onClick={() => setActivePlantTab('p3')}
                     className={cn(
@@ -826,9 +845,13 @@ export function CycleCalculation({ project, theme }: { project: string, theme: '
                         <th className="py-2 px-3 font-semibold">DataDate</th>
                         <th className="py-2 px-3 font-semibold text-right">P1 Avg Total</th>
                         <th className="py-2 px-3 font-semibold text-right text-green-400">P1 Daily Reached</th>
-                        <th className="py-2 px-3 font-semibold text-right">P2 Avg Total</th>
-                        <th className="py-2 px-3 font-semibold text-right text-green-400">P2 Daily Reached</th>
-                        {project !== 'SNTL400' && (
+                        {!isBessProject && (
+                          <>
+                            <th className="py-2 px-3 font-semibold text-right">P2 Avg Total</th>
+                            <th className="py-2 px-3 font-semibold text-right text-green-400">P2 Daily Reached</th>
+                          </>
+                        )}
+                        {!isBessProject && project !== 'SNTL400' && (
                           <>
                             <th className="py-2 px-3 font-semibold text-right">P3 Avg Total</th>
                             <th className="py-2 px-3 font-semibold text-right text-green-400">P3 Daily Reached</th>
@@ -845,9 +868,13 @@ export function CycleCalculation({ project, theme }: { project: string, theme: '
                           <td className="py-2 px-3 text-foreground/80">{r.DataDate}</td>
                           <td className="py-2 px-3 text-right">{r.SWG01_TotalCycle !== null ? r.SWG01_TotalCycle.toFixed(4) : 'NaN'}</td>
                           <td className="py-2 px-3 text-right text-green-400 font-bold">{r.SWG01_DailyReached !== null ? `+${r.SWG01_DailyReached.toFixed(4)}` : 'NaN'}</td>
-                          <td className="py-2 px-3 text-right">{r.SWG02_TotalCycle !== null ? r.SWG02_TotalCycle.toFixed(4) : 'NaN'}</td>
-                          <td className="py-2 px-3 text-right text-green-400 font-bold">{r.SWG02_DailyReached !== null ? `+${r.SWG02_DailyReached.toFixed(4)}` : 'NaN'}</td>
-                          {project !== 'SNTL400' && (
+                          {!isBessProject && (
+                            <>
+                              <td className="py-2 px-3 text-right">{r.SWG02_TotalCycle !== null ? r.SWG02_TotalCycle.toFixed(4) : 'NaN'}</td>
+                              <td className="py-2 px-3 text-right text-green-400 font-bold">{r.SWG02_DailyReached !== null ? `+${r.SWG02_DailyReached.toFixed(4)}` : 'NaN'}</td>
+                            </>
+                          )}
+                          {!isBessProject && project !== 'SNTL400' && (
                             <>
                               <td className="py-2 px-3 text-right">{r.SWG03_TotalCycle !== null ? r.SWG03_TotalCycle.toFixed(4) : 'NaN'}</td>
                               <td className="py-2 px-3 text-right text-green-400 font-bold">{r.SWG03_DailyReached !== null ? `+${r.SWG03_DailyReached.toFixed(4)}` : 'NaN'}</td>
@@ -865,11 +892,11 @@ export function CycleCalculation({ project, theme }: { project: string, theme: '
                   <PlantDetailTable blocks={selectedDay.p1Blocks} />
                 )}
 
-                {activePlantTab === 'p2' && (
+                {!isBessProject && activePlantTab === 'p2' && (
                   <PlantDetailTable blocks={selectedDay.p2Blocks} />
                 )}
 
-                {activePlantTab === 'p3' && project !== 'SNTL400' && (
+                {!isBessProject && activePlantTab === 'p3' && project !== 'SNTL400' && (
                   <PlantDetailTable blocks={selectedDay.p3Blocks} />
                 )}
               </div>
@@ -899,23 +926,23 @@ export function CycleCalculation({ project, theme }: { project: string, theme: '
             )}>
               {renderCycleSummaryCard({
                 title: 'SPPC 1',
-                blockLabel: '16 SACU Blocks',
+                blockLabel: `${project === 'SNTL400' ? 13 : (isBessProject ? 'Total' : 16)} SACU Blocks`,
                 totalYesterday: previousDay?.SWG01_TotalCycle,
                 yesterdayCycle: previousDay?.SWG01_DailyReached,
                 totalToday: selectedDay.SWG01_TotalCycle,
                 todayCycle: selectedDay.SWG01_DailyReached,
               })}
 
-              {renderCycleSummaryCard({
+              {!isBessProject && renderCycleSummaryCard({
                 title: 'SPPC 2',
-                blockLabel: '10 SACU Blocks',
+                blockLabel: `${project === 'SNTL400' ? 11 : 10} SACU Blocks`,
                 totalYesterday: previousDay?.SWG02_TotalCycle,
                 yesterdayCycle: previousDay?.SWG02_DailyReached,
                 totalToday: selectedDay.SWG02_TotalCycle,
                 todayCycle: selectedDay.SWG02_DailyReached,
               })}
 
-              {project !== 'SNTL400' && (
+              {!isBessProject && project !== 'SNTL400' && (
                 renderCycleSummaryCard({
                   title: 'SPPC 3',
                   blockLabel: '11 SACU Blocks',
@@ -949,7 +976,7 @@ export function CycleCalculation({ project, theme }: { project: string, theme: '
                         line: { color: '#00A3FF', width: 2, shape: 'spline' as const },
                         marker: { size: 6 }
                       },
-                      {
+                      ...(isBessProject ? [] : [{
                         x: chartDataDates,
                         y: chartP2Total,
                         type: 'scatter' as const,
@@ -957,8 +984,8 @@ export function CycleCalculation({ project, theme }: { project: string, theme: '
                         name: 'Plant 2 Total',
                         line: { color: '#22C55E', width: 2, shape: 'spline' as const },
                         marker: { size: 6 }
-                      },
-                      ...(project !== 'SNTL400' ? [{
+                      }]),
+                      ...(!isBessProject && project !== 'SNTL400' ? [{
                         x: chartDataDates,
                         y: chartP3Total,
                         type: 'scatter' as const,
@@ -1011,8 +1038,8 @@ export function CycleCalculation({ project, theme }: { project: string, theme: '
                     const todayP2 = selectedDay?.SWG02_TotalCycle || 0;
                     const todayP3 = selectedDay?.SWG03_TotalCycle || 0;
 
-                    const yDataYest = project === 'SNTL400' ? [yestP1, yestP2] : [yestP1, yestP2, yestP3];
-                    const yDataToday = project === 'SNTL400' ? [todayP1, todayP2] : [todayP1, todayP2, todayP3];
+                    const yDataYest = isBessProject ? [yestP1] : project === 'SNTL400' ? [yestP1, yestP2] : [yestP1, yestP2, yestP3];
+                    const yDataToday = isBessProject ? [todayP1] : project === 'SNTL400' ? [todayP1, todayP2] : [todayP1, todayP2, todayP3];
                     
                     const allVals = [...yDataYest, ...yDataToday].filter(v => v > 0);
                     const minY = allVals.length > 0 ? Math.min(...allVals) : 0;
@@ -1022,14 +1049,14 @@ export function CycleCalculation({ project, theme }: { project: string, theme: '
                       <Plot
                         data={[
                           {
-                            x: project === 'SNTL400' ? ['SPPC 1', 'SPPC 2'] : ['SPPC 1', 'SPPC 2', 'SPPC 3'],
+                            x: isBessProject ? ['SPPC 1'] : project === 'SNTL400' ? ['SPPC 1', 'SPPC 2'] : ['SPPC 1', 'SPPC 2', 'SPPC 3'],
                             y: yDataYest,
                             type: 'bar',
                             name: 'Yesterday',
                             marker: { color: '#8B5CF6', opacity: 0.85 }
                           },
                           {
-                            x: project === 'SNTL400' ? ['SPPC 1', 'SPPC 2'] : ['SPPC 1', 'SPPC 2', 'SPPC 3'],
+                            x: isBessProject ? ['SPPC 1'] : project === 'SNTL400' ? ['SPPC 1', 'SPPC 2'] : ['SPPC 1', 'SPPC 2', 'SPPC 3'],
                             y: yDataToday,
                             type: 'bar',
                             name: 'Today',
