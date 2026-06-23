@@ -4348,6 +4348,22 @@ export function DailyEvaluationGraph({
     };
 
     // Shared MATLAB Layout styler â€” now driven by graphConfig
+    const getCycleAnnotations = (pk: 'plant1' | 'plant2' | 'plant3') => {
+      if (!evalData || !evalData.dailyCycle || !evalData.totalCycle || typeof evalData.dailyCycle[pk] !== 'number') return [];
+      return [{
+        x: 0.99, y: 0.95,
+        xref: 'paper', yref: 'paper',
+        xanchor: 'right', yanchor: 'top',
+        text: 'Daily cycle (' + (evalData.dataDate || 'N/A') + '):<br>  Cycle Plant Avg = ' + (evalData.dailyCycle[pk]?.toFixed(3) || '0.000') + '<br><br>Total cycle:<br>  Total Plant Avg = ' + (evalData.totalCycle[pk]?.toFixed(3) || '0.000'),
+        showarrow: false,
+        bgcolor: graphConfig.bgWhite ? '#FFFFFF' : '#1a1a2e',
+        bordercolor: graphConfig.bgWhite ? '#000000' : '#E0E0E0',
+        font: { size: 10, color: graphConfig.bgWhite ? '#000000' : '#E0E0E0', family: 'Helvetica, Arial, sans-serif' },
+        align: 'left',
+        borderpad: 4
+      }];
+    };
+
     const getMATLABLayout = (title: string, y1Title: string, y2Title: string, y2Range?: [number, number], y1Range?: [number, number], uiRev?: string): any => {
       const resolvedTitle  = graphConfig.customTitle   || title;
       const resolvedY1     = graphConfig.customY1Label || y1Title;
@@ -4584,7 +4600,7 @@ export function DailyEvaluationGraph({
                 applyTrace({ x: filteredTimeX, y: evalData.remoteP[pk], type: 'scatter', mode: 'lines', connectgaps: true, name: 'Remote Active Power', showlegend: Boolean(evalData.remoteP[pk]?.some((v) => v != null && !isNaN(v))), line: { color: '#731A66', width: 1.6, shape: 'hv' } }, 2),
                 applyTrace({ x: filteredTimeX, y: evalData.soc[pk],     type: 'scatter', mode: 'lines', name: 'SOC', yaxis: 'y2',   line: { color: '#D95319', width: 1.2 } }, 3),
               ]}
-              layout={getMATLABLayout('SOC & Active Power', 'P (MW)', 'SOC (%)', undefined, undefined, `pf_${pk}_soc`)}
+              layout={{...getMATLABLayout('SOC & Active Power', 'P (MW)', 'SOC (%)', undefined, undefined, `pf_${pk}_soc`), annotations: getCycleAnnotations(pk as any)}}
               useResizeHandler={true} style={{ width: '100%', height: '100%' }} config={plotCfgZoom} onClick={undefined} onHover={(e) => handleHover(e, `pf_${pk}_soc`)} onUnhover={handleUnhover} onRelayout={(e) => handleRelayout(e, `pf_${pk}_soc`)} onClickAnnotation={(e) => handleClickAnnotation(e, `pf_${pk}_soc`)}
             />
           </div>
@@ -4642,7 +4658,7 @@ export function DailyEvaluationGraph({
                 applyTrace({ x: filteredTimeX, y: evalData.remoteP[pk], type: 'scatter', mode: 'lines', connectgaps: true, name: 'Remote Active Power', showlegend: Boolean(evalData.remoteP[pk]?.some((v) => v != null && !isNaN(v))), line: { color: '#731A66', width: 1.6, shape: 'hv' } }, 2),
                 applyTrace({ x: filteredTimeX, y: evalData.soc[pk],     type: 'scatter', mode: 'lines', name: 'SOC', yaxis: 'y2',   line: { color: '#D95319', width: 1.2 } }, 3),
               ]}
-              layout={getMATLABLayout('SOC & Active Power', 'P (MW)', 'SOC (%)', undefined, undefined, `fig4_soc_${pk}`)}
+              layout={{...getMATLABLayout('SOC & Active Power', 'P (MW)', 'SOC (%)', undefined, undefined, `fig4_soc_${pk}`), annotations: getCycleAnnotations(pk as any)}}
               useResizeHandler={true} style={{ width: '100%', height: '100%' }} config={plotCfgZoom} onClick={undefined} onHover={(e) => handleHover(e, `fig4_soc_${pk}`)} onUnhover={handleUnhover} onRelayout={(e) => handleRelayout(e, `fig4_soc_${pk}`)} onClickAnnotation={(e) => handleClickAnnotation(e, `fig4_soc_${pk}`)}
             />
           </div>
