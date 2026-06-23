@@ -8,7 +8,8 @@ export const exportAllGraphsToZip = async (
 ) => {
   if (!evalData || !evalData.timestamps) return;
 
-  const plants = project === 'SNTL400' ? ['plant1', 'plant2'] : ['plant1', 'plant2', 'plant3'];
+  const isBessProject = typeof project === 'string' && (project.startsWith('SNTB') || project.startsWith('SNTV') || project.startsWith('SNTD') || project.startsWith('SNTZ') || project.startsWith('MSGP'));
+  const plants = isBessProject ? ['plant1'] : project === 'SNTL400' ? ['plant1', 'plant2'] : ['plant1', 'plant2', 'plant3'];
   const win = window as any;
   if (!win.Plotly) {
     console.error('Plotly is not loaded. Cannot export graphs.');
@@ -462,25 +463,10 @@ export const exportAllGraphsToZip = async (
     }
   };
 
-  if (project === 'SNTL400') {
-    addMetricGraphs('pf_p1', 'Figure 1 - SWG01 Powerflow Check');
-    addMetricGraphs('pf_p2', 'Figure 2 - SWG02 Powerflow Check');
-    addMetricGraphs('fig5', 'Figure 3 - Active Power & SOC');
-    addMetricGraphs('fig6', 'Figure 4 - Volt & Reactive Power');
-  } else if (project === 'SNTL600') {
-    addMetricGraphs('pf_p1', 'Figure 1 - SWG01 Powerflow Check');
-    addMetricGraphs('pf_p2', 'Figure 2 - SWG02 Powerflow Check');
-    addMetricGraphs('pf_p3', 'Figure 3 - SWG03 Powerflow Check');
-    addMetricGraphs('fig5', 'Figure 4 - Active Power & SOC');
-    addMetricGraphs('fig6', 'Figure 5 - Volt & Reactive Power');
-  } else {
-    addMetricGraphs('f_p', 'Figure 1 - Freq & Active Power');
-    addMetricGraphs('soc_p', 'Figure 2 - SOC & Active Power');
-    addMetricGraphs('v_q', 'Figure 3 - Volt & Reactive Power');
-    addMetricGraphs('fig4', 'Figure 4 - Powerflow Check');
-    addMetricGraphs('fig5', 'Figure 5 - Active Power & SOC');
-    addMetricGraphs('fig6', 'Figure 6 - Volt & Reactive Power');
-  }
+  if (isBessProject) {
+    addMetricGraphs('soc_p', 'Figure 1 - Active Power & SOC');
+    addMetricGraphs('qv_v', 'Figure 2 - Voltage & Reactive Power');
+  } else if (project === 'SNTL400') {} else {}
 
   const total = allGraphs.length;
   const offscreenDiv = document.createElement('div');

@@ -1,7 +1,8 @@
 export const generateAllMatlabScripts = (project: string, evalData: any): { name: string; script: string; safeName: string }[] => {
   if (!evalData || !evalData.timestamps) return [];
 
-  const plants = project === 'SNTL400' ? ['plant1', 'plant2'] : ['plant1', 'plant2', 'plant3'];
+  const isBessProject = typeof project === 'string' && (project.startsWith('SNTB') || project.startsWith('SNTV') || project.startsWith('SNTD') || project.startsWith('SNTZ') || project.startsWith('MSGP'));
+  const plants = isBessProject ? ['plant1'] : project === 'SNTL400' ? ['plant1', 'plant2'] : ['plant1', 'plant2', 'plant3'];
   const allScripts: { name: string; script: string; safeName: string }[] = [];
 
   let graphConfig: any = {

@@ -580,8 +580,10 @@ export default function App() {
           ) : (
             <>
           {/* KPI Cards */}
-          {activeTab !== 'smart_report' && activeTab !== 'export' && activeTab !== 'soc' && activeTab !== 'ai' && activeTab !== 'jscript' && (
-            <section className={`grid ${project === 'SNTL400' ? 'grid-cols-5' : 'grid-cols-6'} gap-4 shrink-0`}>
+          {activeTab !== 'smart_report' && activeTab !== 'export' && activeTab !== 'soc' && activeTab !== 'ai' && activeTab !== 'jscript' && (() => {
+            const isBessProject = typeof project === 'string' && (project.startsWith('SNTB') || project.startsWith('SNTV') || project.startsWith('SNTD') || project.startsWith('SNTZ') || project.startsWith('MSGP'));
+            return (
+            <section className={`grid ${project === 'SNTL400' ? 'grid-cols-5' : (isBessProject ? 'grid-cols-4' : 'grid-cols-6')} gap-4 shrink-0`}>
               <KpiCard 
                 title={kpis.p1.name + " Status"} 
                 value={kpis.p1.value} 
@@ -592,17 +594,19 @@ export default function App() {
                 borderColor={kpis.p1.border}
                 showFlow
               />
-              <KpiCard 
-                title={kpis.p2.name + " Status"} 
-                value={kpis.p2.value} 
-                unit={kpis.p2.unit} 
-                subtext={kpis.p2.subtext} 
-                subtextColor={kpis.p2.color} 
-                bgClass={kpis.p2.bg}
-                borderColor={kpis.p2.border}
-                showFlow
-              />
-              {project !== 'SNTL400' && (
+              {!isBessProject && (
+                <KpiCard 
+                  title={kpis.p2.name + " Status"} 
+                  value={kpis.p2.value} 
+                  unit={kpis.p2.unit} 
+                  subtext={kpis.p2.subtext} 
+                  subtextColor={kpis.p2.color} 
+                  bgClass={kpis.p2.bg}
+                  borderColor={kpis.p2.border}
+                  showFlow
+                />
+              )}
+              {project !== 'SNTL400' && !isBessProject && (
                 <KpiCard 
                   title={kpis.p3.name + " Status"} 
                   value={kpis.p3.value} 
@@ -663,7 +667,9 @@ export default function App() {
                 </div>
               </div>
             </section>
-          )}          {activeTab === 'signal' ? (
+            );
+          })()}
+          {activeTab === 'signal' ? (
             <ValidationDebug progress={progress} setProgress={setProgress} />
           ) : activeTab === 'power' ? (
             <CycleCalculation project={project} theme={theme} />

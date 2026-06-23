@@ -1928,8 +1928,8 @@ export function SmartReport({ lastAiResponse = '', project = 'SNTL 400', plant =
             title="Active Plant for Graph Import"
           >
             <option value="plant1" className="bg-surface text-foreground">Plant 1</option>
-            <option value="plant2" className="bg-surface text-foreground">Plant 2</option>
-            {project !== 'SNTL 400' && (
+            {!(selectedProjectTemplate.startsWith('SNTB') || selectedProjectTemplate.startsWith('SNTV') || selectedProjectTemplate.startsWith('SNTZ') || selectedProjectTemplate.startsWith('SNTD') || selectedProjectTemplate.startsWith('MSGP')) && <option value="plant2" className="bg-surface text-foreground">Plant 2</option>}
+            {project !== 'SNTL 400' && !(selectedProjectTemplate.startsWith('SNTB') || selectedProjectTemplate.startsWith('SNTV') || selectedProjectTemplate.startsWith('SNTZ') || selectedProjectTemplate.startsWith('SNTD') || selectedProjectTemplate.startsWith('MSGP')) && (
               <option value="plant3" className="bg-surface text-foreground">Plant 3</option>
             )}
           </select>
@@ -2370,6 +2370,11 @@ export function SmartReport({ lastAiResponse = '', project = 'SNTL 400', plant =
               >
                 <option value="" disabled hidden>Select Project</option>
                 <option value="SNTL400">SNTL400</option>
+                  <option value="SNTB">SNTB 30MWH</option>
+                  <option value="SNTV">SNTV 12MWH</option>
+                  <option value="SNTZ">SNTZ 3MWH</option>
+                  <option value="SNTD_DMF">SNTD-DMF 18MWH</option>
+                  <option value="MSGP">MSGP 14MWH</option>
                 <option value="SNTL600">SNTL600</option>
                 <option value="SNTL1000">SNTL1000</option>
               </select>

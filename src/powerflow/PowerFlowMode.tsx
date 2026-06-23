@@ -1519,7 +1519,11 @@ function CycleCalculation({ project, theme }: { project: string, theme: 'dark' |
         let SPPC2_SACU: number[] = [];
         let SPPC3_SACU: number[] = [];
         
-        if (project === 'SNTL400') {
+                if (isBessProject) {
+          const pName = typeof project === 'string' ? project : '';
+          const numSacu = pName.startsWith('SNTB') ? 13 : pName.startsWith('SNTV') ? 8 : pName.startsWith('SNTD') ? 8 : pName.startsWith('MSGP') ? 4 : pName.startsWith('SNTZ') ? 2 : 10;
+          SPPC1_SACU = Array.from({length: numSacu}, (_, i) => i + 1);
+        } else if (project === 'SNTL400') {
           SPPC1_SACU = [1, 2, 3, 4, 5, 6, 8, 9, 10, 12, 19, 20, 23];
           SPPC2_SACU = [7, 11, 13, 14, 15, 16, 17, 21, 22, 24, 25];
         } else if (project === 'SNTL600') {

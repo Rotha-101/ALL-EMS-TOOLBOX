@@ -229,7 +229,7 @@ function classifyFile(name, firstRow) {
     const hdrs = firstRow.map(h => h == null ? '' : String(h));
     if (hdrs.some(h => /Remote dispatch/i.test(h))) return 'POC_REMOTEP';
     if (hdrs.some(h => /SOC|Vab|Vbc|Vca|Freq/i.test(h))) return 'POC_FVSOC';
-    if (hdrs.some(h => /[PQ][\(（]\s*k(W|var)|active\s*power|reactive\s*power/i.test(h))) return 'POC_PQ';
+    if (hdrs.some(h => /[PQ][\(（]\s*k(W|var)|active\s*power|reactive\s*power|ptotal/i.test(h))) return 'POC_PQ';
   }
   // 5-minute layout: filename prefix takes precedence; fall back to ESS as default
   if (a1 === 'Time range:') {

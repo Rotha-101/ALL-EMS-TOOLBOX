@@ -23,8 +23,10 @@ import { DraggableOverlay } from './DraggableOverlay';
 const XLSX = (window as any).XLSX;
 type ActiveMetric = 'f_p' | 'soc_p' | 'v_q' | 'fig4' | 'fig5' | 'fig6' | 'pf_p1' | 'pf_p2' | 'pf_p3';
 
+const isBessProjectFn = (project: string) => typeof project === 'string' && (project.startsWith('SNTB') || project.startsWith('SNTV') || project.startsWith('SNTD') || project.startsWith('SNTZ') || project.startsWith('MSGP'));
+
 const getDefaultMetric = (project: string): ActiveMetric =>
-  project === 'SNTL400' || project === 'SNTL600' ? 'pf_p1' : 'soc_p';
+  project === 'SNTL400' || project === 'SNTL600' ? 'pf_p1' : (isBessProjectFn(project) ? 'fig4' : 'soc_p');
 
 const normalizeActiveMetric = (metric: unknown, project: string): ActiveMetric => {
   const allowedMetrics: ActiveMetric[] = ['f_p', 'soc_p', 'v_q', 'fig4', 'fig5', 'fig6', 'pf_p1', 'pf_p2', 'pf_p3'];
@@ -425,7 +427,7 @@ export function DailyEvaluationGraph({
 
       const getEmptyPltArray = () => Array(numPoints).fill(NaN);
       
-      const parsedData: any = {
+      const parsedData: any = { processedFiles: [],
         timestamps,
         pTotal: { plant1: getEmptyPltArray(), plant2: getEmptyPltArray(), plant3: getEmptyPltArray() },
         qTotal: { plant1: getEmptyPltArray(), plant2: getEmptyPltArray(), plant3: getEmptyPltArray() },
@@ -488,7 +490,7 @@ export function DailyEvaluationGraph({
           const row = aoa[ri];
           if (!row) continue;
           const rowStrs = row.map((c: any) => c == null ? '' : String(c).trim());
-          if (rowStrs.some((s: string) => /^(time|datetime)$/i.test(s))) {
+          if (rowStrs.some((s: string) => /^(time|datetime|date\/time|start time)$/i.test(s.replace(/\s+/g, '')))) {
             headerRowIdx = ri;
             headerRow = rowStrs;
             break;
@@ -499,18 +501,18 @@ export function DailyEvaluationGraph({
         const dataRows = aoa.slice(headerRowIdx + 1);
 
         // â”€â”€ Time column â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-        const timeIdx = headerRow.findIndex((h: string) => /^(time|datetime)$/i.test(h));
+        const timeIdx = headerRow.findIndex((h: string) => /^(time|datetime|date\/time|start time)$/i.test(h.replace(/\s+/g, '')));
         if (timeIdx === -1) continue;
 
         // â”€â”€ Classify file type â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-        const isFVS  = /f[-_]?voltage[-_]?soc/i.test(fname) || fname.includes('fvoltage') || fname.includes('voltage_soc') || fname.includes('voltage-soc');
-        const isPQ   = fname.includes('p_q') || fname.includes('-p_q-') || fname.includes('activepower-reactivepower');
-        const isRem  = fname.includes('remote') || fname.includes('remote_active');
+        const isFVS_fallback  = /f[-_]?voltage[-_]?soc/i.test(fname) || fname.includes('fvoltage') || fname.includes('voltage_soc') || fname.includes('voltage-soc') || fname.includes('soc') || fname.includes('pdc') || fname.includes('poc');
+        const isPQ_fallback   = fname.includes('p_q') || fname.includes('-p_q-') || fname.includes('activepower') || fname.includes('reactivepower') || fname.includes('soc') || fname.includes('pdc') || fname.includes('poc');
+        const isRem_fallback  = fname.includes('remote') || fname.includes('remote_active') || fname.includes('soc') || fname.includes('pdc') || fname.includes('poc');
         const isNCC  = fname.includes('ems_report') || fname.includes('telegram') || fname.includes('ncc');
 
         // â”€â”€ Column indices for each signal â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-        const pTotalIdx  = headerRow.findIndex((h: string) => h.toLowerCase().includes('plant_system') && h.toLowerCase().includes('active'));
-        const qTotalIdx  = headerRow.findIndex((h: string) => h.toLowerCase().includes('plant_system') && h.toLowerCase().includes('reactive'));
+        const pTotalIdx  = headerRow.findIndex((h: string) => { const lower = h.toLowerCase().replace(/[^a-z0-9]/g, ''); return lower.includes('activepower') || lower.includes('ptotal') || (lower.includes('active') && lower.includes('power') && !lower.includes('remote') && !lower.includes('command') && !lower.includes('limit')); });
+        const qTotalIdx  = headerRow.findIndex((h: string) => { const lower = h.toLowerCase().replace(/[^a-z0-9]/g, ''); return lower.includes('reactivepower') || lower.includes('qtotal') || (lower.includes('reactive') && lower.includes('power') && !lower.includes('remote') && !lower.includes('command') && !lower.includes('limit')); });
         const socIdx     = headerRow.findIndex((h: string) => h.toLowerCase().includes('soc'));
         const freqIdx    = headerRow.findIndex((h: string) => {
           const lower = h.toLowerCase();
@@ -530,6 +532,11 @@ export function DailyEvaluationGraph({
         const nccP3Idx   = headerRow.findIndex((h: string) => /swg03.+p\(/i.test(h));
         const nccQ3Idx   = headerRow.findIndex((h: string) => /swg03.+q\(/i.test(h));
         const nccSOC3Idx = headerRow.findIndex((h: string) => /swg03.+soc/i.test(h));
+        
+        const isFVS = socIdx !== -1 || freqIdx !== -1 || vabIdx !== -1 || isFVS_fallback;
+        parsedData.processedFiles.push(fname);
+          const isPQ  = pTotalIdx !== -1 || qTotalIdx !== -1 || isPQ_fallback;
+        const isRem = remPIdx !== -1 || isRem_fallback;
 
         const safeNum = (v: any, scale = 1) => {
           if (v == null || v === '--' || v === 'N/A' || v === '') return NaN;
@@ -966,7 +973,7 @@ export function DailyEvaluationGraph({
         const row = aoa[ri];
         if (!row) continue;
         const rowStrs = row.map((c: any) => c == null ? '' : String(c).trim());
-        if (rowStrs.some((s: string) => /^(time|datetime)$/i.test(s))) {
+        if (rowStrs.some((s: string) => /^(time|datetime|date\/time|start time)$/i.test(s.replace(/\s+/g, '')))) {
           headerRowIdx = ri;
           headerRow = rowStrs;
           break;
@@ -974,7 +981,7 @@ export function DailyEvaluationGraph({
       }
       if (headerRowIdx === -1) throw new Error("Could not find header row (Time/Datetime)");
 
-      const timeIdx = headerRow.findIndex((h: string) => /^(time|datetime)$/i.test(h));
+      const timeIdx = headerRow.findIndex((h: string) => /^(time|datetime|date\/time|start time)$/i.test(h.replace(/\s+/g, '')));
       const nccP1Idx   = headerRow.findIndex((h: string) => /swg01.+p\(/i.test(h));
       const nccQ1Idx   = headerRow.findIndex((h: string) => /swg01.+q\(/i.test(h));
       const nccSOC1Idx = headerRow.findIndex((h: string) => /swg01.+soc/i.test(h));
@@ -2077,12 +2084,14 @@ export function DailyEvaluationGraph({
         const visible = graphConfig.traceVisible[idx] !== false;
         const modeBase = graphConfig.showMarkers ? 'lines+markers' : 'lines';
         const isNoData = trace.name && trace.name.includes('(No Data)');
+        const hasValidData = trace.y && trace.y.some(v => v != null && !isNaN(v));
+        const hideLegend = isNoData || !hasValidData;
         return {
           ...trace,
           x: filteredTimeX,
           y: filterArr(trace.y),
           visible: visible ? true : 'legendonly',
-          showlegend: isNoData ? false : (trace.showlegend !== undefined ? trace.showlegend : true),
+          showlegend: hideLegend ? false : (trace.showlegend !== undefined ? trace.showlegend : true),
           mode: modeBase,
           line: {
             ...trace.line,
@@ -3570,12 +3579,14 @@ export function DailyEvaluationGraph({
         const visible = graphConfig.traceVisible[idx] !== false;
         const modeBase = graphConfig.showMarkers ? 'lines+markers' : 'lines';
         const isNoData = trace.name && trace.name.includes('(No Data)');
+        const hasValidData = trace.y && trace.y.some(v => v != null && !isNaN(v));
+        const hideLegend = isNoData || !hasValidData;
         return {
           ...trace,
           x: filteredTimeX,
           y: filterArr(trace.y),
           visible: visible ? true : 'legendonly',
-          showlegend: isNoData ? false : (trace.showlegend !== undefined ? trace.showlegend : true),
+          showlegend: hideLegend ? false : (trace.showlegend !== undefined ? trace.showlegend : true),
           mode: modeBase,
           line: {
             ...trace.line,
@@ -4316,12 +4327,14 @@ export function DailyEvaluationGraph({
       const visible = graphConfig.traceVisible[idx] !== false;
       const modeBase = graphConfig.showMarkers ? 'lines+markers' : 'lines';
       const isNoData = trace.name && trace.name.includes('(No Data)');
+      const hasValidData = trace.y && trace.y.some((v: any) => v != null && !isNaN(v));
+      const hideLegend = isNoData || !hasValidData;
       return {
         ...trace,
         x: filteredTimeX,
         y: filterArr(trace.y),
         visible: visible ? true : 'legendonly',
-        showlegend: isNoData ? false : (trace.showlegend !== undefined ? trace.showlegend : true),
+        showlegend: hideLegend ? false : (trace.showlegend !== undefined ? trace.showlegend : true),
         mode: modeBase as any,
         line: {
           ...trace.line,
@@ -4461,7 +4474,8 @@ export function DailyEvaluationGraph({
 
     if (activeMetric === 'f_p') {
       const isBessProject = typeof project === 'string' && (project.startsWith('SNTB') || project.startsWith('SNTV') || project.startsWith('SNTD') || project.startsWith('SNTZ') || project.startsWith('MSGP'));
-      const hasPlant3 = !isBessProject && project !== 'SNTL400' && evalData.soc.plant3 && evalData.soc.plant3.some(v => !isNaN(v));
+      const hasPlant2 = (evalData.pTotal.plant2 && evalData.pTotal.plant2.some(v => !isNaN(v))) || (evalData.soc.plant2 && evalData.soc.plant2.some(v => !isNaN(v)));
+        const hasPlant3 = !isBessProject && project !== 'SNTL400' && evalData.soc.plant3 && evalData.soc.plant3.some(v => !isNaN(v));
       const drawPanel1 = (pk: 'plant1' | 'plant2' | 'plant3', title: string) => (
         <div className="h-[280px] w-full relative mb-1" key={pk}>
           <Plot
@@ -4480,7 +4494,7 @@ export function DailyEvaluationGraph({
             <b>{evalData.dataDate} | Frequency & Active Power (All Plants)</b>
           </div>
           {drawPanel1('plant1', evalData.dataDate + ' | SWG01 (Plant 01) | Frequency & Active Power')}
-          {drawPanel1('plant2', evalData.dataDate + ' | SWG02 (Plant 02) | Frequency & Active Power')}
+          {hasPlant2 && drawPanel1('plant2', evalData.dataDate + ' | SWG02 (Plant 02) | Frequency & Active Power')}
           {hasPlant3 && drawPanel1('plant3', evalData.dataDate + ' | SWG03 (Plant 03) | Frequency & Active Power')}
         </div>
       );
@@ -4488,7 +4502,8 @@ export function DailyEvaluationGraph({
 
     if (activeMetric === 'soc_p') {
       const isBessProject = typeof project === 'string' && (project.startsWith('SNTB') || project.startsWith('SNTV') || project.startsWith('SNTD') || project.startsWith('SNTZ') || project.startsWith('MSGP'));
-      const hasPlant3 = !isBessProject && project !== 'SNTL400' && evalData.soc.plant3 && evalData.soc.plant3.some(v => !isNaN(v));
+      const hasPlant2 = (evalData.pTotal.plant2 && evalData.pTotal.plant2.some(v => !isNaN(v))) || (evalData.soc.plant2 && evalData.soc.plant2.some(v => !isNaN(v)));
+        const hasPlant3 = !isBessProject && project !== 'SNTL400' && evalData.soc.plant3 && evalData.soc.plant3.some(v => !isNaN(v));
       const drawPanel2 = (pk: 'plant1' | 'plant2' | 'plant3', title: string) => (
         <div className="h-[280px] w-full relative mb-1" key={pk}>
           <Plot
@@ -4509,7 +4524,7 @@ export function DailyEvaluationGraph({
             <b>{evalData.dataDate} | SOC & Active Power (All Plants)</b>
           </div>
           {drawPanel2('plant1', evalData.dataDate + ' | SWG01 (Plant 01) | SOC & Active Power')}
-          {drawPanel2('plant2', evalData.dataDate + ' | SWG02 (Plant 02) | SOC & Active Power')}
+          {hasPlant2 && drawPanel2('plant2', evalData.dataDate + ' | SWG02 (Plant 02) | SOC & Active Power')}
           {hasPlant3 && drawPanel2('plant3', evalData.dataDate + ' | SWG03 (Plant 03) | SOC & Active Power')}
         </div>
       );
@@ -4517,7 +4532,8 @@ export function DailyEvaluationGraph({
 
     if (activeMetric === 'v_q') {
       const isBessProject = typeof project === 'string' && (project.startsWith('SNTB') || project.startsWith('SNTV') || project.startsWith('SNTD') || project.startsWith('SNTZ') || project.startsWith('MSGP'));
-      const hasPlant3 = !isBessProject && project !== 'SNTL400' && evalData.soc.plant3 && evalData.soc.plant3.some(v => !isNaN(v));
+      const hasPlant2 = (evalData.pTotal.plant2 && evalData.pTotal.plant2.some(v => !isNaN(v))) || (evalData.soc.plant2 && evalData.soc.plant2.some(v => !isNaN(v)));
+        const hasPlant3 = !isBessProject && project !== 'SNTL400' && evalData.soc.plant3 && evalData.soc.plant3.some(v => !isNaN(v));
       const drawPanel3 = (pk: 'plant1' | 'plant2' | 'plant3', title: string) => (
         <div className="h-[280px] w-full relative mb-1" key={pk}>
           <Plot
@@ -4539,7 +4555,7 @@ export function DailyEvaluationGraph({
             <b>{evalData.dataDate} | Reactive Power & Voltage (All Plants)</b>
           </div>
           {drawPanel3('plant1', evalData.dataDate + ' | SWG01 (Plant 01) | Reactive Power & Voltage')}
-          {drawPanel3('plant2', evalData.dataDate + ' | SWG02 (Plant 02) | Reactive Power & Voltage')}
+          {hasPlant2 && drawPanel3('plant2', evalData.dataDate + ' | SWG02 (Plant 02) | Reactive Power & Voltage')}
           {hasPlant3 && drawPanel3('plant3', evalData.dataDate + ' | SWG03 (Plant 03) | Reactive Power & Voltage')}
         </div>
       );
@@ -4601,7 +4617,8 @@ export function DailyEvaluationGraph({
 
     if (activeMetric === 'fig4') {
       const isBessProject = typeof project === 'string' && (project.startsWith('SNTB') || project.startsWith('SNTV') || project.startsWith('SNTD') || project.startsWith('SNTZ') || project.startsWith('MSGP'));
-      const hasPlant3 = !isBessProject && project !== 'SNTL400' && evalData.soc.plant3 && evalData.soc.plant3.some(v => !isNaN(v));
+      const hasPlant2 = (evalData.pTotal.plant2 && evalData.pTotal.plant2.some(v => !isNaN(v))) || (evalData.soc.plant2 && evalData.soc.plant2.some(v => !isNaN(v)));
+        const hasPlant3 = !isBessProject && project !== 'SNTL400' && evalData.soc.plant3 && evalData.soc.plant3.some(v => !isNaN(v));
       const drawPanel4 = (pk: 'plant1' | 'plant2' | 'plant3', title: string) => (
         <div className="flex flex-col w-full border-b-[3px] border-border-v/50 pb-4 mb-4" key={pk}>
           <div className="text-center text-[12px] tracking-wider mb-2 font-sans font-bold" style={{ color: graphConfig.bgWhite ? '#000000' : '#E0E0E0' }}>
@@ -4647,10 +4664,10 @@ export function DailyEvaluationGraph({
       return (
         <div className="flex flex-col w-full h-full overflow-y-auto pt-2" style={{ background: graphConfig.bgWhite ? '#FFFFFF' : '#1a1a2e' }}>
           <div className="text-center text-[13px] tracking-wider mb-2 mt-0 font-sans" style={{ color: graphConfig.bgWhite ? '#000000' : '#E0E0E0' }}>
-            <b>{evalData.dataDate} | Powerflow (Daily Check) All Plants</b>
+            <b>{isBessProject ? `${project} Daily Evaluation` : `${evalData.dataDate} | Powerflow (Daily Check) All Plants`}</b>
           </div>
           {drawPanel4('plant1', evalData.dataDate + ' | SWG01 (Plant 01)')}
-          {drawPanel4('plant2', evalData.dataDate + ' | SWG02 (Plant 02)')}
+          {hasPlant2 && drawPanel4('plant2', evalData.dataDate + ' | SWG02 (Plant 02)')}
           {hasPlant3 && drawPanel4('plant3', evalData.dataDate + ' | SWG03 (Plant 03)')}
         </div>
       );
@@ -4658,9 +4675,10 @@ export function DailyEvaluationGraph({
 
     if (activeMetric === 'fig5') {
       const isBessProject = typeof project === 'string' && (project.startsWith('SNTB') || project.startsWith('SNTV') || project.startsWith('SNTD') || project.startsWith('SNTZ') || project.startsWith('MSGP'));
-      const hasPlant3 = !isBessProject && project !== 'SNTL400' && evalData.soc.plant3 && evalData.soc.plant3.some(v => !isNaN(v));
-      const avgDaily = (evalData.dailyCycle.plant1 + evalData.dailyCycle.plant2 + (hasPlant3 ? evalData.dailyCycle.plant3 : 0)) / (hasPlant3 ? 3 : 2);
-      const avgTotal = (evalData.totalCycle.plant1 + evalData.totalCycle.plant2 + (hasPlant3 ? evalData.totalCycle.plant3 : 0)) / (hasPlant3 ? 3 : 2);
+      const hasPlant2 = (evalData.pTotal.plant2 && evalData.pTotal.plant2.some(v => !isNaN(v))) || (evalData.soc.plant2 && evalData.soc.plant2.some(v => !isNaN(v)));
+        const hasPlant3 = !isBessProject && project !== 'SNTL400' && evalData.soc.plant3 && evalData.soc.plant3.some(v => !isNaN(v));
+      const avgDaily = (evalData.dailyCycle.plant1 + (hasPlant2 ? evalData.dailyCycle.plant2 : 0) + (hasPlant3 ? evalData.dailyCycle.plant3 : 0)) / (hasPlant3 ? 3 : (hasPlant2 ? 2 : 1));
+      const avgTotal = (evalData.totalCycle.plant1 + (hasPlant2 ? evalData.totalCycle.plant2 : 0) + (hasPlant3 ? evalData.totalCycle.plant3 : 0)) / (hasPlant3 ? 3 : (hasPlant2 ? 2 : 1));
 
       const drawPanel = (pKey: 'plant1' | 'plant2' | 'plant3', title: string, statsIndex: number) => {
         const socStats = evalData.socStats[pKey];
@@ -4795,7 +4813,7 @@ export function DailyEvaluationGraph({
                 <div className="bg-white/95 border border-blue-500/80 px-2 py-1 text-[7.5px] font-mono text-black shadow-sm rounded-sm leading-relaxed flex flex-col max-w-[190px]">
                   <div className="font-bold border-b border-gray-200 pb-0.5 mb-1 text-[8px]">Daily cycle ({evalData.dataDate}):</div>
                   <div>Cycle_Plant 01 = {evalData.dailyCycle.plant1.toFixed(3)} -&gt; {evalData.dailyCycle.plant1 < 0.5 ? 'Take action' : evalData.dailyCycle.plant1 < 0.8 ? 'Warning' : (project === 'SNTL400' && evalData.dailyCycle.plant1 > 1 ? 'Alert' : 'Normal')}</div>
-                  <div>Cycle_Plant 02 = {evalData.dailyCycle.plant2.toFixed(3)} -&gt; {evalData.dailyCycle.plant2 < 0.5 ? 'Take action' : evalData.dailyCycle.plant2 < 0.8 ? 'Warning' : (project === 'SNTL400' && evalData.dailyCycle.plant2 > 1 ? 'Alert' : 'Normal')}</div>
+                  {hasPlant2 && <div>Cycle_Plant 02 = {evalData.dailyCycle.plant2.toFixed(3)} -&gt; {evalData.dailyCycle.plant2 < 0.5 ? 'Take action' : evalData.dailyCycle.plant2 < 0.8 ? 'Warning' : (project === 'SNTL400' && evalData.dailyCycle.plant2 > 1 ? 'Alert' : 'Normal')}</div>}
                   {hasPlant3 && <div>Cycle_Plant 03 = {evalData.dailyCycle.plant3.toFixed(3)} -&gt; {evalData.dailyCycle.plant3 < 0.5 ? 'Take action' : evalData.dailyCycle.plant3 < 0.8 ? 'Warning' : (project === 'SNTL400' && evalData.dailyCycle.plant3 > 1 ? 'Alert' : 'Normal')}</div>}
                   <div className="font-bold text-blue-600 border-t border-gray-200 pt-0.5 mt-0.5">Cycle_Average Daily Cycle = {avgDaily.toFixed(3)} -&gt; {avgDaily < 0.5 ? 'Take action' : avgDaily < 0.8 ? 'Warning' : (project === 'SNTL400' && avgDaily > 1 ? 'Alert' : 'Normal')}</div>
                 </div>
@@ -4809,7 +4827,7 @@ export function DailyEvaluationGraph({
                   <div className="bg-white/95 border border-blue-500/80 px-2 py-1 text-[7.5px] font-mono text-black shadow-sm rounded-sm leading-relaxed flex flex-col max-w-[210px]">
                     <div className="font-bold border-b border-gray-200 pb-0.5 mb-1 text-[8px]">Plant Total Cycle ({evalData.dataDate}):</div>
                     <div>Plant 01 Total Cycle = {evalData.totalCycle.plant1.toFixed(6)}</div>
-                    <div>Plant 02 Total Cycle = {evalData.totalCycle.plant2.toFixed(6)}</div>
+                    {hasPlant2 && <div>Plant 02 Total Cycle = {evalData.totalCycle.plant2.toFixed(6)}</div>}
                     {hasPlant3 && <div>Plant 03 Total Cycle = {evalData.totalCycle.plant3.toFixed(6)}</div>}
                     <div className="font-bold text-blue-600 border-t border-gray-200 pt-0.5 mt-0.5">Average Total Plant Cycle = {avgTotal.toFixed(6)}</div>
                   </div>
@@ -4851,7 +4869,7 @@ export function DailyEvaluationGraph({
             <b>{evalData.dataDate} | Active Power & SOC (All Plants)</b>
           </div>
           {drawPanel('plant1', evalData.dataDate + ' | SWG01 (Plant 01) | Active Power & SOC', 1)}
-          {drawPanel('plant2', evalData.dataDate + ' | SWG02 (Plant 02) | Active Power & SOC', 2)}
+          {hasPlant2 && drawPanel('plant2', evalData.dataDate + ' | SWG02 (Plant 02) | Active Power & SOC', 2)}
           {hasPlant3 && drawPanel('plant3', evalData.dataDate + ' | SWG03 (Plant 03) | Active Power & SOC', 3)}
         </div>
       );
@@ -4859,7 +4877,8 @@ export function DailyEvaluationGraph({
 
     if (activeMetric === 'fig6') {
       const isBessProject = typeof project === 'string' && (project.startsWith('SNTB') || project.startsWith('SNTV') || project.startsWith('SNTD') || project.startsWith('SNTZ') || project.startsWith('MSGP'));
-      const hasPlant3 = !isBessProject && project !== 'SNTL400' && evalData.soc.plant3 && evalData.soc.plant3.some(v => !isNaN(v));
+      const hasPlant2 = (evalData.pTotal.plant2 && evalData.pTotal.plant2.some(v => !isNaN(v))) || (evalData.soc.plant2 && evalData.soc.plant2.some(v => !isNaN(v)));
+        const hasPlant3 = !isBessProject && project !== 'SNTL400' && evalData.soc.plant3 && evalData.soc.plant3.some(v => !isNaN(v));
       const drawPanel6 = (pk: 'plant1' | 'plant2' | 'plant3', title: string) => (
         <div className="h-[280px] w-full relative mb-1" key={pk}>
           <Plot
@@ -4881,7 +4900,7 @@ export function DailyEvaluationGraph({
             <b>{evalData.dataDate} | Reactive Power & Voltage (All Plants)</b>
           </div>
           {drawPanel6('plant1', evalData.dataDate + ' | SWG01 (Plant 01) | Reactive Power & Voltage')}
-          {drawPanel6('plant2', evalData.dataDate + ' | SWG02 (Plant 02) | Reactive Power & Voltage')}
+          {hasPlant2 && drawPanel6('plant2', evalData.dataDate + ' | SWG02 (Plant 02) | Reactive Power & Voltage')}
           {hasPlant3 && drawPanel6('plant3', evalData.dataDate + ' | SWG03 (Plant 03) | Reactive Power & Voltage')}
         </div>
       );
@@ -4890,6 +4909,9 @@ export function DailyEvaluationGraph({
 
   return (
     <section className="flex-1 min-h-0 bg-panel border border-border-v rounded-sm flex flex-col relative overflow-hidden">
+
+      
+  
       {/* Header Toolbar */}
       {(isAIAgentMode || isExportPreviewMode) ? (
         <div className="px-3 py-1.5 border-b border-border-v flex items-center justify-between bg-surface/50 shrink-0 gap-2">
@@ -4915,6 +4937,8 @@ export function DailyEvaluationGraph({
                     <SelectItem value="fig5" className="text-[11px]">Figure 4: Active Power & SOC (All Plants)</SelectItem>
                     <SelectItem value="fig6" className="text-[11px]">Figure 5: Volt & Reactive Power (All Plants)</SelectItem>
                   </>
+                ) : typeof project === 'string' && (project.startsWith('SNTB') || project.startsWith('SNTV') || project.startsWith('SNTD') || project.startsWith('SNTZ') || project.startsWith('MSGP')) ? (
+                  <SelectItem value="fig4" className="text-[11px]">Figure 1: Daily Evaluation</SelectItem>
                 ) : (
                   <>
                     <SelectItem value="f_p" className="text-[11px]">Figure 1: Freq & Active Power</SelectItem>
@@ -5223,6 +5247,11 @@ export function DailyEvaluationGraph({
                     <span className={cn("text-[8px]", activeMetric === 'fig6' ? "text-blue-100" : "opacity-50")}>All Plants</span>
                   </button>
                 </>
+              ) : typeof project === 'string' && (project.startsWith('SNTB') || project.startsWith('SNTV') || project.startsWith('SNTD') || project.startsWith('SNTZ') || project.startsWith('MSGP')) ? (
+                <button onClick={() => setActiveMetric('fig4')} className={cn("p-2 text-left rounded shadow-sm border-0 transition-all flex items-center justify-between", activeMetric === 'fig4' ? "bg-accent-blue text-white font-bold" : "bg-surface hover:bg-foreground/5 text-foreground/80 border border-border-v")}>
+                  <span>Figure 1: Daily Evaluation</span>
+                  <span className={cn("text-[8px]", activeMetric === 'fig4' ? "text-blue-100" : "opacity-50")}>Subplots</span>
+                </button>
               ) : (
                 <>
                   <button onClick={() => setActiveMetric('f_p')} className={cn("p-2 text-left rounded shadow-sm border-0 transition-all flex items-center justify-between", activeMetric === 'f_p' ? "bg-accent-blue text-white font-bold" : "bg-surface hover:bg-foreground/5 text-foreground/80 border border-border-v")}>
@@ -5269,7 +5298,7 @@ export function DailyEvaluationGraph({
                    activeMetric === 'f_p' ? 'Fig 1 (Frequency & P)' :
                    activeMetric === 'soc_p' ? 'Fig 2 (SOC & P)' :
                    activeMetric === 'v_q' ? 'Fig 3 (Voltage & Q)' :
-                   activeMetric === 'fig4' ? 'Fig 4 (Powerflow check)' :
+                   activeMetric === 'fig4' ? (typeof project === 'string' && (project.startsWith('SNTB') || project.startsWith('SNTV') || project.startsWith('SNTD') || project.startsWith('SNTZ') || project.startsWith('MSGP')) ? 'Fig 1 (Daily Evaluation)' : 'Fig 4 (Powerflow check)') :
                    activeMetric === 'fig5' ? (project === 'SNTL400' ? 'Fig 3 (Active Power & SOC)' : project === 'SNTL600' ? 'Fig 4 (Active Power & SOC)' : 'Fig 5 (Active Power & SOC All Plants)') :
                    (project === 'SNTL400' ? 'Fig 4 (Voltage & Reactive Power)' : project === 'SNTL600' ? 'Fig 5 (Voltage & Reactive Power)' : 'Fig 6 (Voltage & Reactive Power All Plants)')}
                 </span>

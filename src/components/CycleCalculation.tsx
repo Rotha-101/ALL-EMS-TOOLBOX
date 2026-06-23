@@ -380,7 +380,7 @@ export function CycleCalculation({ project, theme }: { project: string, theme: '
 
   const fontColor = theme === 'dark' ? '#E0E0E0' : '#111827';
   const gridColor = theme === 'dark' ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)';
-  const projectBlockCount = project === 'SNTL400' ? 24 : 37;
+  const projectBlockCount = project === 'SNTL400' ? 24 : (isBessProject ? 'Total' : 37);
 
   const formatCycleMetric = (value: number | null | undefined, signed = false) => {
     if (value === null || value === undefined || Number.isNaN(value)) {
@@ -866,22 +866,22 @@ export function CycleCalculation({ project, theme }: { project: string, theme: '
                         <tr key={i} className="hover:bg-foreground/[0.02] transition-colors">
                           <td className="py-2 px-3 text-foreground/80 truncate max-w-[100px]">{r.SourceFolder}</td>
                           <td className="py-2 px-3 text-foreground/80">{r.DataDate}</td>
-                          <td className="py-2 px-3 text-right">{r.SWG01_TotalCycle !== null ? r.SWG01_TotalCycle.toFixed(4) : 'NaN'}</td>
-                          <td className="py-2 px-3 text-right text-green-400 font-bold">{r.SWG01_DailyReached !== null ? `+${r.SWG01_DailyReached.toFixed(4)}` : 'NaN'}</td>
+                          <td className="py-2 px-3 text-right">{r.SWG01_TotalCycle !== null ? r.SWG01_TotalCycle.toFixed(4) : '---'}</td>
+                          <td className="py-2 px-3 text-right text-green-400 font-bold">{r.SWG01_DailyReached !== null ? `+${r.SWG01_DailyReached.toFixed(4)}` : '---'}</td>
                           {!isBessProject && (
                             <>
-                              <td className="py-2 px-3 text-right">{r.SWG02_TotalCycle !== null ? r.SWG02_TotalCycle.toFixed(4) : 'NaN'}</td>
-                              <td className="py-2 px-3 text-right text-green-400 font-bold">{r.SWG02_DailyReached !== null ? `+${r.SWG02_DailyReached.toFixed(4)}` : 'NaN'}</td>
+                              <td className="py-2 px-3 text-right">{r.SWG02_TotalCycle !== null ? r.SWG02_TotalCycle.toFixed(4) : '---'}</td>
+                              <td className="py-2 px-3 text-right text-green-400 font-bold">{r.SWG02_DailyReached !== null ? `+${r.SWG02_DailyReached.toFixed(4)}` : '---'}</td>
                             </>
                           )}
                           {!isBessProject && project !== 'SNTL400' && (
                             <>
-                              <td className="py-2 px-3 text-right">{r.SWG03_TotalCycle !== null ? r.SWG03_TotalCycle.toFixed(4) : 'NaN'}</td>
-                              <td className="py-2 px-3 text-right text-green-400 font-bold">{r.SWG03_DailyReached !== null ? `+${r.SWG03_DailyReached.toFixed(4)}` : 'NaN'}</td>
+                              <td className="py-2 px-3 text-right">{r.SWG03_TotalCycle !== null ? r.SWG03_TotalCycle.toFixed(4) : '---'}</td>
+                              <td className="py-2 px-3 text-right text-green-400 font-bold">{r.SWG03_DailyReached !== null ? `+${r.SWG03_DailyReached.toFixed(4)}` : '---'}</td>
                             </>
                           )}
-                          <td className="py-2 px-3 text-right text-accent-blue font-bold">{r.Average_Total_Plant_Cycle !== null ? r.Average_Total_Plant_Cycle.toFixed(4) : 'NaN'}</td>
-                          <td className="py-2 px-3 text-right text-accent-blue font-bold">{r.Average_Daily_Cycle !== null ? `+${r.Average_Daily_Cycle.toFixed(4)}` : 'NaN'}</td>
+                          <td className="py-2 px-3 text-right text-accent-blue font-bold">{r.Average_Total_Plant_Cycle !== null ? r.Average_Total_Plant_Cycle.toFixed(4) : '---'}</td>
+                          <td className="py-2 px-3 text-right text-accent-blue font-bold">{r.Average_Daily_Cycle !== null ? `+${r.Average_Daily_Cycle.toFixed(4)}` : '---'}</td>
                         </tr>
                       ))}
                     </tbody>

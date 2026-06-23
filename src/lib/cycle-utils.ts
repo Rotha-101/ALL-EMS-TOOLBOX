@@ -52,6 +52,12 @@ export function buildPlantCycleTableJs(rows: ESSRow[], plantLabel: string): Plan
     const existingESS = Array.from(new Set(currentData.map(r => r.ESS_Number).filter(n => !isNaN(n)))).sort((a, b) => a - b);
     
     let essListToUse = [1, 2, 3, 4];
+    if (existingESS.length > 0) {
+      const maxEss = Math.max(4, ...existingESS);
+      if (maxEss > 4) {
+        essListToUse = Array.from({length: maxEss}, (_, i) => i + 1);
+      }
+    }
     if (sacuNum === 37 && existingESS.length === 3) {
       essListToUse = existingESS;
     }
@@ -157,15 +163,28 @@ export async function parseCycleExcelFile(file: File, path: string): Promise<ESS
 
     const tokSACU = dName.match(/(SACU|STS)-?(\d+)/i);
     const tokB = dName.match(/B(\d+)/i);
+    const blockMatch = dName.match(/Block\s*([A-Z])/i);
+
     if (tokSACU) {
       sacuNum = parseInt(tokSACU[2], 10);
     } else if (tokB) {
       sacuNum = parseInt(tokB[1], 10);
+    } else if (blockMatch) {
+      sacuNum = blockMatch[1].toUpperCase().charCodeAt(0) - 64; // A=1, B=2, C=3...
     }
 
-    const tokESS = dName.match(/ESS[-_ ]?0?(\d+)/i);
+    const tokESS = dName.match(/(?:ESS|BESS|BEES)[-_ ]?0?(\d+)/i);
     if (tokESS) {
       essNum = parseInt(tokESS[1], 10);
+    }
+
+    // Default for 20% projects if not standard SACU:
+    if (isNaN(sacuNum) && !isNaN(essNum)) {
+      if (dName.includes('STS_BESS')) {
+        sacuNum = 0; // Distinct from Block A/B/C
+      } else {
+        sacuNum = 1; // Default
+      }
     }
 
     let startTime = null;
@@ -270,8 +289,8 @@ export const getMockDailyResults = (proj: string): DailyResult[] => {
       SWG02_DailyReached: i > 0 ? 0.38 : null,
       SWG03_TotalCycle: p3,
       SWG03_DailyReached: i > 0 ? 0.48 : null,
-      Average_Total_Plant_Cycle: proj === 'SNTL400' ? (p1 + p2) / 2 : (p1 + p2 + p3) / 3,
-      Average_Daily_Cycle: i > 0 ? (proj === 'SNTL400' ? (0.42 + 0.38) / 2 : (0.42 + 0.38 + 0.48) / 3) : null,
+      Average_Total_Plant_Cycle: (typeof proj === 'string' && (proj.startsWith('SNTB') || proj.startsWith('SNTV') || proj.startsWith('SNTD') || proj.startsWith('SNTZ') || proj.startsWith('MSGP'))) ? p1 : (proj === 'SNTL400' ? (p1 + p2) / 2 : (p1 + p2 + p3) / 3),
+      Average_Daily_Cycle: i > 0 ? ((typeof proj === 'string' && (proj.startsWith('SNTB') || proj.startsWith('SNTV') || proj.startsWith('SNTD') || proj.startsWith('SNTZ') || proj.startsWith('MSGP'))) ? 0.42 : (proj === 'SNTL400' ? (0.42 + 0.38) / 2 : (0.42 + 0.38 + 0.48) / 3)) : null,
       p1Blocks,
       p2Blocks,
       p3Blocks

@@ -220,7 +220,7 @@ function classifyFile(name, firstRow) {
     const hdrs = firstRow.map(h => h == null ? '' : String(h));
     if (hdrs.some(h => /Remote dispatch/i.test(h))) return 'POC_REMOTEP';
     if (hdrs.some(h => /SOC|Vab|Vbc|Vca|Frequence/i.test(h))) return 'POC_FVSOC';
-    if (hdrs.some(h => /[PQ][\(（]\s*k(W|var)/i.test(h))) return 'POC_PQ';
+    if (hdrs.some(h => /[PQ][\(（]\s*k(W|var)/i.test(h) || /active\s*power/i.test(h) || /reactive\s*power/i.test(h) || /ptotal/i.test(h))) return 'POC_PQ';
   }
   // 5-minute layout: filename prefix takes precedence; fall back to ESS as default
   if (a1 === 'Time range:') {
@@ -236,6 +236,13 @@ function extractPlantId(path, file) {
     const m = s.match(/PLANT[#_\-\s]*(\d{1,2})/i) || s.match(/Plant[\-_\s]+(\d{1,2})/i);
     if (m) return `Plant_${m[1].padStart(2, '0')}`;
   }
+  
+  // If no explicit Plant ID is found, check if it's a 20% BESS project (which only has 1 Plant)
+  const isBess = typeof hcActiveProject === 'string' && (hcActiveProject.startsWith('SNTB') || hcActiveProject.startsWith('SNTV') || hcActiveProject.startsWith('SNTD') || hcActiveProject.startsWith('SNTZ') || hcActiveProject.startsWith('MSGP'));
+  if (isBess) {
+    return 'Plant_01';
+  }
+  
   return 'Plant_unknown';
 }
 
@@ -918,10 +925,10 @@ const HC_PROJECTS = [
     { name: 'Plant_05', expected: { POC: 3, ESS: 0, SmartLogger: 0, ESR: 0, ESM: 0 } },
   ]},
   { id: 'SNTB', label: 'SNTB 30MWH', defaultPlants: [
-    { name: 'Plant_01', expected: { POC: 3, ESS: 50, SmartLogger: 13, ESR: 300, ESM: 2400 } },
+    { name: 'Plant_01', expected: { POC: 3, ESS: 50, SmartLogger: 13, ESR: 300, ESM: 3400 } },
   ]},
   { id: 'SNTV', label: 'SNTV 12MWH', defaultPlants: [
-    { name: 'Plant_01', expected: { POC: 3, ESS: 20, SmartLogger: 5, ESR: 120, ESM: 960 } },
+    { name: 'Plant_01', expected: { POC: 3, ESS: 28, SmartLogger: 8, ESR: 120, ESM: 960 } },
   ]},
   { id: 'SNTD_DMF', label: 'SNTD-DMF 18MWH', defaultPlants: [
     { name: 'Plant_01', expected: { POC: 3, ESS: 30, SmartLogger: 8, ESR: 180, ESM: 1440 } },
@@ -930,7 +937,7 @@ const HC_PROJECTS = [
     { name: 'Plant_01', expected: { POC: 3, ESS: 5, SmartLogger: 2, ESR: 30, ESM: 240 } },
   ]},
   { id: 'MSGP', label: 'MSGP 14MWH', defaultPlants: [
-    { name: 'Plant_01', expected: { POC: 3, ESS: 24, SmartLogger: 6, ESR: 144, ESM: 1152 } },
+    { name: 'Plant_01', expected: { POC: 3, ESS: 74, SmartLogger: 4, ESR: 344, ESM: 1152 } },
   ]},
 ];
 const hcByProject = {};   // projectId -> [plant, plant, ...]

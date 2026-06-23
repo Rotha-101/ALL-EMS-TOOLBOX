@@ -35,7 +35,9 @@ export function ImportChartScript({ project, theme = 'dark' }: Props) {
   }, [project]);
 
   const getDefaultScript = () => {
-    const isSNTL400 = project === "SNTL400";
+    const isBessProject = typeof project === 'string' && (project.startsWith('SNTB') || project.startsWith('SNTV') || project.startsWith('SNTD') || project.startsWith('SNTZ') || project.startsWith('MSGP'));
+    const isSNTL400 = project === 'SNTL400';
+    const plantsSuffix = isBessProject ? '' : isSNTL400 ? ', plant2' : ', plant2, plant3';
 
     return `/**
  * DEFAULT ENGINE SCRIPT FOR ${project}
@@ -45,17 +47,17 @@ export function ImportChartScript({ project, theme = 'dark' }: Props) {
  * Available data object fields:
  *   data.times        – string[] of "HH:MM:SS" labels (86400 points for 1Hz)
  *   data.timestamps   – Date[] objects matching times
- *   data.pTotal       – { plant1, plant2${isSNTL400 ? "" : ", plant3"} } – Active Power (MW)
- *   data.freq         – { plant1, plant2${isSNTL400 ? "" : ", plant3"} } – Frequency (Hz)
- *   data.soc          – { plant1, plant2${isSNTL400 ? "" : ", plant3"} } – State of Charge (%)
- *   data.cmdP         – { plant1, plant2${isSNTL400 ? "" : ", plant3"} } – NCC Active Power Command (MW)
- *   data.remoteP      – { plant1, plant2${isSNTL400 ? "" : ", plant3"} } – Remote Active Power (MW)
- *   data.dispatchP    – { plant1, plant2${isSNTL400 ? "" : ", plant3"} } – Dispatch Allocation (MW)
- *   data.vab          – { plant1, plant2${isSNTL400 ? "" : ", plant3"} } – Vab Voltage (kV)
- *   data.vbc          – { plant1, plant2${isSNTL400 ? "" : ", plant3"} } – Vbc Voltage (kV)
- *   data.vca          – { plant1, plant2${isSNTL400 ? "" : ", plant3"} } – Vca Voltage (kV)
- *   data.qTotal       – { plant1, plant2${isSNTL400 ? "" : ", plant3"} } – Reactive Power (MVar)
- *   data.cmdQ         – { plant1, plant2${isSNTL400 ? "" : ", plant3"} } – NCC Reactive Power Command (MVar)
+ *   data.pTotal       – { plant1, plant2${plantsSuffix} } – Active Power (MW)
+ *   data.freq         – { plant1, plant2${plantsSuffix} } – Frequency (Hz)
+ *   data.soc          – { plant1, plant2${plantsSuffix} } – State of Charge (%)
+ *   data.cmdP         – { plant1, plant2${plantsSuffix} } – NCC Active Power Command (MW)
+ *   data.remoteP      – { plant1, plant2${plantsSuffix} } – Remote Active Power (MW)
+ *   data.dispatchP    – { plant1, plant2${plantsSuffix} } – Dispatch Allocation (MW)
+ *   data.vab          – { plant1, plant2${plantsSuffix} } – Vab Voltage (kV)
+ *   data.vbc          – { plant1, plant2${plantsSuffix} } – Vbc Voltage (kV)
+ *   data.vca          – { plant1, plant2${plantsSuffix} } – Vca Voltage (kV)
+ *   data.qTotal       – { plant1, plant2${plantsSuffix} } – Reactive Power (MVar)
+ *   data.cmdQ         – { plant1, plant2${plantsSuffix} } – NCC Reactive Power Command (MVar)
  *   data.dataDate     – string – e.g. "May 15, 2026"
  * 
  * Return an object with:
@@ -65,15 +67,16 @@ export function ImportChartScript({ project, theme = 'dark' }: Props) {
 function generatePlotConfig(data) {
   const t = data.times || [];
   const p1 = data.pTotal?.plant1 || [];
-  const p2 = data.pTotal?.plant2 || [];${isSNTL400 ? "" : "\n  const p3 = data.pTotal?.plant3 || [];"}
-  const freq1 = data.freq?.plant1 || [];
-  const freq2 = data.freq?.plant2 || [];${isSNTL400 ? "" : "\n  const freq3 = data.freq?.plant3 || [];"}
-  const soc1 = data.soc?.plant1 || [];
-  const soc2 = data.soc?.plant2 || [];${isSNTL400 ? "" : "\n  const soc3 = data.soc?.plant3 || [];"}
-  const cmdP1 = data.cmdP?.plant1 || [];
-  const cmdP2 = data.cmdP?.plant2 || [];${isSNTL400 ? "" : "\n  const cmdP3 = data.cmdP?.plant3 || [];"}
-  const remP1 = data.remoteP?.plant1 || [];
-  const remP2 = data.remoteP?.plant2 || [];${isSNTL400 ? "" : "\n  const remP3 = data.remoteP?.plant3 || [];"}
+    const p2 = isBessProject ? [] : data.pTotal?.plant2 || [];
+  const p3 = (isBessProject || isSNTL400) ? [] : data.pTotal?.plant3 || [];
+  const freq2 = isBessProject ? [] : data.freq?.plant2 || [];
+  const freq3 = (isBessProject || isSNTL400) ? [] : data.freq?.plant3 || [];
+  const soc2 = isBessProject ? [] : data.soc?.plant2 || [];
+  const soc3 = (isBessProject || isSNTL400) ? [] : data.soc?.plant3 || [];
+  const cmdP2 = isBessProject ? [] : data.cmdP?.plant2 || [];
+  const cmdP3 = (isBessProject || isSNTL400) ? [] : data.cmdP?.plant3 || [];
+  const remP2 = isBessProject ? [] : data.remoteP?.plant2 || [];
+  const remP3 = (isBessProject || isSNTL400) ? [] : data.remoteP?.plant3 || [];
   const vab1  = data.vab?.plant1 || [];
   const vbc1  = data.vbc?.plant1 || [];
   const vca1  = data.vca?.plant1 || [];

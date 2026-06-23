@@ -40,7 +40,7 @@ export function getMockEvaluationData(project: string) {
   const soc3 = makeSoc(-1);
   const pTotal1 = makeP(1, 1.0);
   const pTotal2 = makeP(1, 0.62);
-  const pTotal3 = project === 'SNTL400' ? Array(numPoints).fill(0) : makeP(1, 0.62);
+  const pTotal3 = ((typeof project === 'string' && (project.startsWith('SNTB') || project.startsWith('SNTV') || project.startsWith('SNTD') || project.startsWith('SNTZ') || project.startsWith('MSGP'))) || project === 'SNTL400') ? Array(numPoints).fill(0) : makeP(1, 0.62);
 
   return {
     timestamps,
