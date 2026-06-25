@@ -361,6 +361,37 @@ export function DailyEvaluationGraph({
     return isNaN(d.getTime()) ? null : d;
   };
 
+  const interpolateArray = (arr: number[]) => {
+    let lastValidIdx = -1;
+    for (let i = 0; i < arr.length; i++) {
+      if (!isNaN(arr[i])) {
+        if (lastValidIdx !== -1 && i - lastValidIdx > 1) {
+          const startVal = arr[lastValidIdx];
+          const endVal = arr[i];
+          const steps = i - lastValidIdx;
+          for (let j = 1; j < steps; j++) {
+            arr[lastValidIdx + j] = startVal + (endVal - startVal) * (j / steps);
+          }
+        }
+        lastValidIdx = i;
+      }
+    }
+    const firstIdx = arr.findIndex(v => !isNaN(v));
+    if (firstIdx > 0) {
+      for (let i = 0; i < firstIdx; i++) arr[i] = arr[firstIdx];
+    }
+    let lastIdx = -1;
+    for (let i = arr.length - 1; i >= 0; i--) {
+      if (!isNaN(arr[i])) {
+        lastIdx = i;
+        break;
+      }
+    }
+    if (lastIdx !== -1 && lastIdx < arr.length - 1) {
+      for (let i = lastIdx + 1; i < arr.length; i++) arr[i] = arr[lastIdx];
+    }
+  };
+
   // Helper: Forward-fill empty telemetry data gaps to ensure clean lines
   const forwardFillArray = (arr: number[]) => {
     let last = NaN;
@@ -430,6 +461,10 @@ export function DailyEvaluationGraph({
       const parsedData: any = { processedFiles: [],
         timestamps,
         pTotal: { plant1: getEmptyPltArray(), plant2: getEmptyPltArray(), plant3: getEmptyPltArray() },
+        pPccPVS: { plant1: getEmptyPltArray(), plant2: getEmptyPltArray(), plant3: getEmptyPltArray() },
+        qBess: { plant1: getEmptyPltArray(), plant2: getEmptyPltArray(), plant3: getEmptyPltArray() },
+        pPV: { plant1: getEmptyPltArray(), plant2: getEmptyPltArray(), plant3: getEmptyPltArray() },
+        pBESS: { plant1: getEmptyPltArray(), plant2: getEmptyPltArray(), plant3: getEmptyPltArray() },
         qTotal: { plant1: getEmptyPltArray(), plant2: getEmptyPltArray(), plant3: getEmptyPltArray() },
         soc: { plant1: getEmptyPltArray(), plant2: getEmptyPltArray(), plant3: getEmptyPltArray() },
         freq: { plant1: getEmptyPltArray(), plant2: getEmptyPltArray(), plant3: getEmptyPltArray() },
@@ -490,7 +525,7 @@ export function DailyEvaluationGraph({
           const row = aoa[ri];
           if (!row) continue;
           const rowStrs = row.map((c: any) => c == null ? '' : String(c).trim());
-          if (rowStrs.some((s: string) => /^(time|datetime|date\/time|start time)$/i.test(s.replace(/\s+/g, '')))) {
+          if (rowStrs.some((s: string) => /^(time|datetime|date\/time|starttime)$/i.test(s.replace(/\s+/g, '')))) {
             headerRowIdx = ri;
             headerRow = rowStrs;
             break;
@@ -501,16 +536,19 @@ export function DailyEvaluationGraph({
         const dataRows = aoa.slice(headerRowIdx + 1);
 
         // â”€â”€ Time column â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-        const timeIdx = headerRow.findIndex((h: string) => /^(time|datetime|date\/time|start time)$/i.test(h.replace(/\s+/g, '')));
+        const timeIdx = headerRow.findIndex((h: string) => /^(time|datetime|date\/time|starttime)$/i.test(h.replace(/\s+/g, '')));
         if (timeIdx === -1) continue;
 
         // â”€â”€ Classify file type â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-        const isFVS_fallback  = /f[-_]?voltage[-_]?soc/i.test(fname) || fname.includes('fvoltage') || fname.includes('voltage_soc') || fname.includes('voltage-soc') || fname.includes('soc') || fname.includes('pdc') || fname.includes('poc');
-        const isPQ_fallback   = fname.includes('p_q') || fname.includes('-p_q-') || fname.includes('activepower') || fname.includes('reactivepower') || fname.includes('soc') || fname.includes('pdc') || fname.includes('poc');
-        const isRem_fallback  = fname.includes('remote') || fname.includes('remote_active') || fname.includes('soc') || fname.includes('pdc') || fname.includes('poc');
-        const isNCC  = fname.includes('ems_report') || fname.includes('telegram') || fname.includes('ncc');
+        const lFname = fname.toLowerCase();
+        const isFVS_fallback  = /f[-_]?voltage[-_]?soc/i.test(fname) || lFname.includes('fvoltage') || lFname.includes('voltage_soc') || lFname.includes('voltage-soc') || lFname.includes('soc') || lFname.includes('pdc') || lFname.includes('poc');
+        const isPQ_fallback   = lFname.includes('p_q') || lFname.includes('-p_q-') || lFname.includes('activepower') || lFname.includes('reactivepower') || lFname.includes('soc') || lFname.includes('pdc') || lFname.includes('poc');
+        const isRem_fallback  = lFname.includes('remote') || lFname.includes('remote_active') || lFname.includes('soc') || lFname.includes('pdc') || lFname.includes('poc');
+        const isNCC  = lFname.includes('ems_report') || lFname.includes('telegram') || lFname.includes('ncc');
 
         // â”€â”€ Column indices for each signal â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+        const pPVIdx     = headerRow.findIndex((h: string) => h.toLowerCase().replace(/[^a-z0-9]/g, '').includes('activepvpower'));
+        const pBESSIdx   = headerRow.findIndex((h: string) => { const lower = h.toLowerCase().replace(/[^a-z0-9]/g, ''); return lower.includes('activeesspower') || (lower.includes('bess') && lower.includes('power')); });
         const pTotalIdx  = headerRow.findIndex((h: string) => { const lower = h.toLowerCase().replace(/[^a-z0-9]/g, ''); return lower.includes('activepower') || lower.includes('ptotal') || (lower.includes('active') && lower.includes('power') && !lower.includes('remote') && !lower.includes('command') && !lower.includes('limit')); });
         const qTotalIdx  = headerRow.findIndex((h: string) => { const lower = h.toLowerCase().replace(/[^a-z0-9]/g, ''); return lower.includes('reactivepower') || lower.includes('qtotal') || (lower.includes('reactive') && lower.includes('power') && !lower.includes('remote') && !lower.includes('command') && !lower.includes('limit')); });
         const socIdx     = headerRow.findIndex((h: string) => h.toLowerCase().includes('soc'));
@@ -518,9 +556,9 @@ export function DailyEvaluationGraph({
           const lower = h.toLowerCase();
           return lower.includes('frequen') || lower.includes('freq') || lower.includes('f (hz)') || lower.includes('f(hz)');
         });
-        const vabIdx     = headerRow.findIndex((h: string) => h.toLowerCase().includes('vab') || (h.toLowerCase().includes('a-b') && h.toLowerCase().includes('voltage')));
-        const vbcIdx     = headerRow.findIndex((h: string) => h.toLowerCase().includes('vbc') || (h.toLowerCase().includes('b-c') && h.toLowerCase().includes('voltage')));
-        const vcaIdx     = headerRow.findIndex((h: string) => h.toLowerCase().includes('vca') || (h.toLowerCase().includes('c-a') && h.toLowerCase().includes('voltage')));
+        const vabIdx     = headerRow.findIndex((h: string) => h.toLowerCase().includes('vab') || (((h.toLowerCase().includes('a-b') || h.toLowerCase().includes('ab line')) && h.toLowerCase().includes('voltage'))));
+        const vbcIdx     = headerRow.findIndex((h: string) => h.toLowerCase().includes('vbc') || (((h.toLowerCase().includes('b-c') || h.toLowerCase().includes('bc line')) && h.toLowerCase().includes('voltage'))));
+        const vcaIdx     = headerRow.findIndex((h: string) => h.toLowerCase().includes('vca') || (((h.toLowerCase().includes('c-a') || h.toLowerCase().includes('ca line')) && h.toLowerCase().includes('voltage'))));
         const remPIdx    = headerRow.findIndex((h: string) => h.toLowerCase().includes('remote') && h.toLowerCase().includes('active'));
         
         const nccP1Idx   = headerRow.findIndex((h: string) => /swg01.+p\(/i.test(h));
@@ -533,9 +571,16 @@ export function DailyEvaluationGraph({
         const nccQ3Idx   = headerRow.findIndex((h: string) => /swg03.+q\(/i.test(h));
         const nccSOC3Idx = headerRow.findIndex((h: string) => /swg03.+soc/i.test(h));
         
-        const isFVS = socIdx !== -1 || freqIdx !== -1 || vabIdx !== -1 || isFVS_fallback;
+        const isSmartLogger = /smartlogger/i.test(fname) || lFname.includes('smartlogger');
+        const isPCS = /pcs/i.test(fname) || lFname.includes('pcs');
+        const isESS = /ess/i.test(fname) || lFname.includes('ess');
+        const isPVS = /pv[-_ ]?smoothing/i.test(fname) || lFname.includes('pv_smoothing');
+        
+        const isSubDevice = isPCS || isESS || isSmartLogger;
+
+        const isFVS = (socIdx !== -1 || freqIdx !== -1 || vabIdx !== -1 || isFVS_fallback) && !isSubDevice;
         parsedData.processedFiles.push(fname);
-          const isPQ  = pTotalIdx !== -1 || qTotalIdx !== -1 || isPQ_fallback;
+        const isPQ  = (pTotalIdx !== -1 || qTotalIdx !== -1 || isPQ_fallback) && !isSubDevice;
         const isRem = remPIdx !== -1 || isRem_fallback;
 
         const safeNum = (v: any, scale = 1) => {
@@ -557,10 +602,28 @@ export function DailyEvaluationGraph({
           const ti = Math.min(numPoints - 1, Math.max(0, sec));
 
           if (isPQ) {
-            const p = safeNum(row[pTotalIdx], 0.001); // kW â†’ MW
+            const p = safeNum(row[pTotalIdx], 0.001);
+            const pv = safeNum(row[pPVIdx], 0.001);
+            const bess = safeNum(row[pBESSIdx], 0.001);
             const q = safeNum(row[qTotalIdx], 0.001);
-            if (!isNaN(p)) parsedData.pTotal[plantKey][ti] = p;
-            if (!isNaN(q)) parsedData.qTotal[plantKey][ti] = q;
+
+            if (isPVS) {
+               if (!isNaN(p)) parsedData.pPccPVS[plantKey][ti] = p;
+            } else {
+               if (!isNaN(p)) parsedData.pTotal[plantKey][ti] = p;
+               if (!isNaN(q)) parsedData.qTotal[plantKey][ti] = q;
+            }
+
+            if (!isNaN(pv)) parsedData.pPV[plantKey][ti] = pv;
+            if (!isNaN(bess)) parsedData.pBESS[plantKey][ti] = bess;
+          }
+
+          if (isSmartLogger) {
+            const q = safeNum(row[qTotalIdx], 0.001);
+            if (!isNaN(q)) {
+              const ex = parsedData.qBess[plantKey][ti];
+              parsedData.qBess[plantKey][ti] = isNaN(ex) ? q : ex + q;
+            }
           }
           if (isFVS) {
             const soc  = safeNum(row[socIdx]);
@@ -602,14 +665,18 @@ export function DailyEvaluationGraph({
       }
 
       const plants: ('plant1' | 'plant2' | 'plant3')[] = ['plant1', 'plant2', 'plant3'];
-      for (const p of plants) {
-        forwardFillArray(parsedData.pTotal[p]);
-        forwardFillArray(parsedData.qTotal[p]);
-        forwardFillArray(parsedData.soc[p]);
-        forwardFillArray(parsedData.freq[p]);
-        forwardFillArray(parsedData.vab[p]);
-        forwardFillArray(parsedData.vbc[p]);
-        forwardFillArray(parsedData.vca[p]);
+            for (const p of plants) {
+        interpolateArray(parsedData.pTotal[p]);
+        interpolateArray(parsedData.pPccPVS[p]);
+        interpolateArray(parsedData.pPV[p]);
+        interpolateArray(parsedData.pBESS[p]);
+        interpolateArray(parsedData.qTotal[p]);
+        interpolateArray(parsedData.qBess[p]);
+        interpolateArray(parsedData.soc[p]);
+        interpolateArray(parsedData.freq[p]);
+        interpolateArray(parsedData.vab[p]);
+        interpolateArray(parsedData.vbc[p]);
+        interpolateArray(parsedData.vca[p]);
         forwardFillArray(parsedData.remoteP[p]);
         forwardFillArray(parsedData.cmdP[p]);
         forwardFillArray(parsedData.cmdQ[p]);
@@ -973,7 +1040,7 @@ export function DailyEvaluationGraph({
         const row = aoa[ri];
         if (!row) continue;
         const rowStrs = row.map((c: any) => c == null ? '' : String(c).trim());
-        if (rowStrs.some((s: string) => /^(time|datetime|date\/time|start time)$/i.test(s.replace(/\s+/g, '')))) {
+        if (rowStrs.some((s: string) => /^(time|datetime|date\/time|starttime)$/i.test(s.replace(/\s+/g, '')))) {
           headerRowIdx = ri;
           headerRow = rowStrs;
           break;
@@ -981,7 +1048,7 @@ export function DailyEvaluationGraph({
       }
       if (headerRowIdx === -1) throw new Error("Could not find header row (Time/Datetime)");
 
-      const timeIdx = headerRow.findIndex((h: string) => /^(time|datetime|date\/time|start time)$/i.test(h.replace(/\s+/g, '')));
+      const timeIdx = headerRow.findIndex((h: string) => /^(time|datetime|date\/time|starttime)$/i.test(h.replace(/\s+/g, '')));
       const nccP1Idx   = headerRow.findIndex((h: string) => /swg01.+p\(/i.test(h));
       const nccQ1Idx   = headerRow.findIndex((h: string) => /swg01.+q\(/i.test(h));
       const nccSOC1Idx = headerRow.findIndex((h: string) => /swg01.+soc/i.test(h));
@@ -2314,7 +2381,7 @@ export function DailyEvaluationGraph({
           chartArea.appendChild(div);
 
           const traces = [
-            applyTrace({ y: evalDataRaw.pTotal[pk], type: 'scatter', mode: 'lines', name: 'P total', line: { color: '#0072BD', width: 2 } }, 0),
+            applyTrace({ y: evalDataRaw.pTotal[pk], type: 'scatter', mode: 'lines', name: 'P (POC) (MW)', line: { color: '#0072BD', width: 2 } }, 0),
             applyTrace({ y: evalDataRaw.freq[pk], type: 'scatter', mode: 'lines', name: 'Frequency', yaxis: 'y2', line: { color: '#D95319', width: 1.5 } }, 1)
           ];
           const layout = getMATLABLayout(drawPanelTitle(pk) + ' | Frequency & Active Power', 'P (MW)', 'F (Hz)', undefined, undefined, 'f_p_' + pk);
@@ -2330,7 +2397,7 @@ export function DailyEvaluationGraph({
           chartArea.appendChild(div);
 
           const traces = [
-            applyTrace({ y: evalDataRaw.pTotal[pk], type: 'scatter', mode: 'lines', name: 'P total', line: { color: '#0072BD', width: 2 } }, 0),
+            applyTrace({ y: evalDataRaw.pTotal[pk], type: 'scatter', mode: 'lines', name: 'P (POC) (MW)', line: { color: '#0072BD', width: 2 } }, 0),
             applyTrace({ y: evalDataRaw.cmdP[pk], type: 'scatter', mode: 'lines', name: 'P command from NCC', showlegend: Boolean((evalData?.cmdP?.[pk] || evalData?.cmdP?.[pk])?.some((v) => v != null && !isNaN(v))), line: { color: '#D95319', width: 1.6, shape: 'hv' } }, 1),
             applyTrace({ y: evalDataRaw.remoteP[pk], type: 'scatter', mode: 'lines', connectgaps: true, name: 'Remote Active Power', line: { color: '#731A66', width: 1.6, shape: 'hv' } }, 2),
             applyTrace({ y: evalDataRaw.soc[pk], type: 'scatter', mode: 'lines', name: 'SOC', yaxis: 'y2', line: { color: '#D95319', width: 2 } }, 3)
@@ -2348,9 +2415,9 @@ export function DailyEvaluationGraph({
           chartArea.appendChild(div);
 
           const traces = [
-            applyTrace({ y: evalDataRaw.vab[pk], type: 'scatter', mode: 'lines', name: 'Vab', line: { color: '#0072BD', width: 1.2 } }, 0),
-            applyTrace({ y: evalDataRaw.vbc[pk], type: 'scatter', mode: 'lines', name: 'Vbc', line: { color: '#77AC30', width: 1.2 } }, 1),
-            applyTrace({ y: evalDataRaw.vca[pk], type: 'scatter', mode: 'lines', name: 'Vca', line: { color: '#7E2F8E', width: 1.2 } }, 2),
+            applyTrace({ x: filteredTimeX, y: evalData.vab[pk].map((v: any, idx: number) => (v + evalData.vbc[pk][idx] + evalData.vca[pk][idx]) / 3), type: 'scatter', mode: 'lines', name: 'Vavg (kV)', line: { color: '#0072BD', width: 1.2 } }, 0),
+
+
             applyTrace({ y: evalDataRaw.qTotal[pk], type: 'scatter', mode: 'lines', name: 'Q total', yaxis: 'y2', line: { color: '#D95319', width: 1.3 } }, 3),
             applyTrace({ y: evalDataRaw.cmdQ[pk], type: 'scatter', mode: 'lines', name: 'Q command from NCC', showlegend: Boolean((evalData?.cmdQ?.[pk] || evalData?.cmdQ?.[pk])?.some((v) => v != null && !isNaN(v))), yaxis: 'y2', line: { color: '#000000', width: 1.6 } }, 4)
           ];
@@ -2378,7 +2445,7 @@ export function DailyEvaluationGraph({
           div1.style.position = 'relative';
         containerDiv.appendChild(div1);
         createPlotWithEvents(div1, [
-          applyTrace({ y: evalDataRaw.pTotal[pk], type: 'scatter', mode: 'lines', name: 'P total', line: { color: '#0072BD', width: 2 } }, 0),
+          applyTrace({ y: evalDataRaw.pTotal[pk], type: 'scatter', mode: 'lines', name: 'P (POC) (MW)', line: { color: '#0072BD', width: 2 } }, 0),
           applyTrace({ y: evalDataRaw.freq[pk], type: 'scatter', mode: 'lines', name: 'Frequency', yaxis: 'y2', line: { color: '#D95319', width: 1.5 } }, 1)
         ], getMATLABLayout('Frequency & Active Power', 'P (MW)', 'F (Hz)', undefined, undefined, activeMetric + '_fp_' + pk), activeMetric + '_fp_' + pk);
 
@@ -2389,7 +2456,7 @@ export function DailyEvaluationGraph({
           div2.style.position = 'relative';
         containerDiv.appendChild(div2);
         createPlotWithEvents(div2, [
-          applyTrace({ y: evalDataRaw.pTotal[pk], type: 'scatter', mode: 'lines', name: 'P total', line: { color: '#0072BD', width: 1.2 } }, 0),
+          applyTrace({ y: evalDataRaw.pTotal[pk], type: 'scatter', mode: 'lines', name: 'P (POC) (MW)', line: { color: '#0072BD', width: 1.2 } }, 0),
           applyTrace({ y: evalDataRaw.cmdP[pk], type: 'scatter', mode: 'lines', name: 'P command from NCC', showlegend: Boolean(evalDataRaw.cmdP[pk]?.some((v) => v != null && !isNaN(v))), line: { color: '#D95319', width: 1.6, shape: 'hv' } }, 1),
           applyTrace({ y: evalDataRaw.remoteP[pk], type: 'scatter', mode: 'lines', connectgaps: true, name: 'Remote Active Power', showlegend: Boolean(evalDataRaw.remoteP[pk]?.some((v) => v != null && !isNaN(v))), line: { color: '#731A66', width: 1.6, shape: 'hv' } }, 2),
           applyTrace({ y: evalDataRaw.soc[pk], type: 'scatter', mode: 'lines', name: 'SOC', yaxis: 'y2', line: { color: '#D95319', width: 1.2 } }, 3)
@@ -2402,9 +2469,9 @@ export function DailyEvaluationGraph({
           div3.style.position = 'relative';
         containerDiv.appendChild(div3);
         createPlotWithEvents(div3, [
-          applyTrace({ y: evalDataRaw.vab[pk], type: 'scatter', mode: 'lines', name: 'Vab', line: { color: '#0072BD', width: 1.2 } }, 0),
-          applyTrace({ y: evalDataRaw.vbc[pk], type: 'scatter', mode: 'lines', name: 'Vbc', line: { color: '#77AC30', width: 1.2 } }, 1),
-          applyTrace({ y: evalDataRaw.vca[pk], type: 'scatter', mode: 'lines', name: 'Vca', line: { color: '#7E2F8E', width: 1.2 } }, 2),
+          applyTrace({ x: filteredTimeX, y: evalData.vab[pk].map((v: any, idx: number) => (v + evalData.vbc[pk][idx] + evalData.vca[pk][idx]) / 3), type: 'scatter', mode: 'lines', name: 'Vavg (kV)', line: { color: '#0072BD', width: 1.2 } }, 0),
+
+
           applyTrace({ y: evalDataRaw.qTotal[pk], type: 'scatter', mode: 'lines', name: 'Q total', yaxis: 'y2', line: { color: '#D95319', width: 1.3 } }, 3),
           applyTrace({ y: evalDataRaw.cmdQ[pk], type: 'scatter', mode: 'lines', name: 'Q command from NCC', showlegend: Boolean(evalDataRaw.cmdQ[pk]?.some((v) => v != null && !isNaN(v))), yaxis: 'y2', line: { color: '#000000', width: 1.8 } }, 4)
         ], getMATLABLayout('Reactive Power & Voltage', 'V (kV)', 'Q (MVar)', undefined, undefined, activeMetric + '_vq_' + pk), activeMetric + '_vq_' + pk);
@@ -2427,7 +2494,7 @@ export function DailyEvaluationGraph({
           div1.style.position = 'relative';
           containerDiv.appendChild(div1);
           createPlotWithEvents(div1, [
-            applyTrace({ y: evalDataRaw.pTotal[pk], type: 'scatter', mode: 'lines', name: 'P total', line: { color: '#0072BD', width: 2 } }, 0),
+            applyTrace({ y: evalDataRaw.pTotal[pk], type: 'scatter', mode: 'lines', name: 'P (POC) (MW)', line: { color: '#0072BD', width: 2 } }, 0),
             applyTrace({ y: evalDataRaw.freq[pk], type: 'scatter', mode: 'lines', name: 'Frequency', yaxis: 'y2', line: { color: '#D95319', width: 1.5 } }, 1)
           ], getMATLABLayout('Frequency & Active Power', 'P (MW)', 'F (Hz)', undefined, undefined, 'fig4_fp_' + pk), 'fig4_fp_' + pk);
 
@@ -2438,7 +2505,7 @@ export function DailyEvaluationGraph({
           div2.style.position = 'relative';
           containerDiv.appendChild(div2);
           createPlotWithEvents(div2, [
-            applyTrace({ y: evalDataRaw.pTotal[pk], type: 'scatter', mode: 'lines', name: 'P total', line: { color: '#0072BD', width: 1.2 } }, 0),
+            applyTrace({ y: evalDataRaw.pTotal[pk], type: 'scatter', mode: 'lines', name: 'P (POC) (MW)', line: { color: '#0072BD', width: 1.2 } }, 0),
             applyTrace({ y: evalDataRaw.cmdP[pk], type: 'scatter', mode: 'lines', name: 'P command from NCC', showlegend: Boolean(evalDataRaw.cmdP[pk]?.some((v) => v != null && !isNaN(v))), line: { color: '#D95319', width: 1.6, shape: 'hv' } }, 1),
             applyTrace({ y: evalDataRaw.remoteP[pk], type: 'scatter', mode: 'lines', connectgaps: true, name: 'Remote Active Power', showlegend: Boolean(evalDataRaw.remoteP[pk]?.some((v) => v != null && !isNaN(v))), line: { color: '#731A66', width: 1.6, shape: 'hv' } }, 2),
             applyTrace({ y: evalDataRaw.soc[pk], type: 'scatter', mode: 'lines', name: 'SOC', yaxis: 'y2', line: { color: '#D95319', width: 1.2 } }, 3)
@@ -2451,9 +2518,9 @@ export function DailyEvaluationGraph({
           div3.style.position = 'relative';
           containerDiv.appendChild(div3);
           createPlotWithEvents(div3, [
-            applyTrace({ y: evalDataRaw.vab[pk], type: 'scatter', mode: 'lines', name: 'Vab', line: { color: '#0072BD', width: 1.2 } }, 0),
-            applyTrace({ y: evalDataRaw.vbc[pk], type: 'scatter', mode: 'lines', name: 'Vbc', line: { color: '#77AC30', width: 1.2 } }, 1),
-            applyTrace({ y: evalDataRaw.vca[pk], type: 'scatter', mode: 'lines', name: 'Vca', line: { color: '#7E2F8E', width: 1.2 } }, 2),
+            applyTrace({ x: filteredTimeX, y: evalData.vab[pk].map((v: any, idx: number) => (v + evalData.vbc[pk][idx] + evalData.vca[pk][idx]) / 3), type: 'scatter', mode: 'lines', name: 'Vavg (kV)', line: { color: '#0072BD', width: 1.2 } }, 0),
+
+
             applyTrace({ y: evalDataRaw.qTotal[pk], type: 'scatter', mode: 'lines', name: 'Q total', yaxis: 'y2', line: { color: '#D95319', width: 1.3 } }, 3),
             applyTrace({ y: evalDataRaw.cmdQ[pk], type: 'scatter', mode: 'lines', name: 'Q command from NCC', showlegend: Boolean(evalDataRaw.cmdQ[pk]?.some((v) => v != null && !isNaN(v))), yaxis: 'y2', line: { color: '#000000', width: 1.8 } }, 4)
           ], getMATLABLayout('Reactive Power & Voltage', 'V (kV)', 'Q (MVar)', undefined, undefined, 'fig4_vq_' + pk), 'fig4_vq_' + pk);
@@ -2496,7 +2563,7 @@ export function DailyEvaluationGraph({
 
           const socStats = evalDataRaw.socStats[pk];
           const traces = [
-            applyTrace({ y: evalDataRaw.pTotal[pk], type: 'scatter', mode: 'lines', name: 'P total', line: { color: '#0072BD', width: 1.2 } }, 0),
+            applyTrace({ y: evalDataRaw.pTotal[pk], type: 'scatter', mode: 'lines', name: 'P (POC) (MW)', line: { color: '#0072BD', width: 1.2 } }, 0),
             applyTrace({ y: evalDataRaw.cmdP[pk], type: 'scatter', mode: 'lines', name: 'P command from NCC', showlegend: Boolean(evalDataRaw.cmdP[pk]?.some((v) => v != null && !isNaN(v))), line: { color: '#D95319', width: 1.6, shape: 'hv' } }, 1),
             applyTrace({ y: evalDataRaw.remoteP[pk], type: 'scatter', mode: 'lines', connectgaps: true, name: 'Remote Active Power', showlegend: Boolean(evalDataRaw.remoteP[pk]?.some((v) => v != null && !isNaN(v))), line: { color: '#731A66', width: 1.6, shape: 'hv' } }, 2),
             applyTrace({ y: evalDataRaw.dispatchP[pk], type: 'scatter', mode: 'lines', name: 'P dispatch allocation', showlegend: Boolean(evalDataRaw.dispatchP[pk]?.some((v) => v != null && !isNaN(v))), line: { color: '#339933', width: 1.8, dash: 'dash' } }, 3),
@@ -2576,9 +2643,9 @@ export function DailyEvaluationGraph({
           chartArea.appendChild(div);
 
           const traces = [
-            applyTrace({ y: evalDataRaw.vab[pk], type: 'scatter', mode: 'lines', name: 'Vab', line: { color: '#0072BD', width: 1.2 } }, 0),
-            applyTrace({ y: evalDataRaw.vbc[pk], type: 'scatter', mode: 'lines', name: 'Vbc', line: { color: '#77AC30', width: 1.2 } }, 1),
-            applyTrace({ y: evalDataRaw.vca[pk], type: 'scatter', mode: 'lines', name: 'Vca', line: { color: '#7E2F8E', width: 1.2 } }, 2),
+            applyTrace({ x: filteredTimeX, y: evalData.vab[pk].map((v: any, idx: number) => (v + evalData.vbc[pk][idx] + evalData.vca[pk][idx]) / 3), type: 'scatter', mode: 'lines', name: 'Vavg (kV)', line: { color: '#0072BD', width: 1.2 } }, 0),
+
+
             applyTrace({ y: evalDataRaw.qTotal[pk], type: 'scatter', mode: 'lines', name: 'Q total', yaxis: 'y2', line: { color: '#D95319', width: 1.3 } }, 3),
             applyTrace({ y: evalDataRaw.cmdQ[pk], type: 'scatter', mode: 'lines', name: 'Q command from NCC', showlegend: Boolean((evalDataRaw?.cmdQ?.[pk] || evalDataRaw?.cmdQ?.[pk])?.some((v) => v != null && !isNaN(v))), yaxis: 'y2', line: { color: '#000000', width: 1.8 } }, 4)
           ];
@@ -3809,7 +3876,7 @@ export function DailyEvaluationGraph({
           chartArea.appendChild(div);
 
           const traces = [
-            applyTrace({ y: evalDataRaw.pTotal[pk], type: 'scatter', mode: 'lines', name: 'P total', line: { color: '#0072BD', width: 2 } }, 0),
+            applyTrace({ y: evalDataRaw.pTotal[pk], type: 'scatter', mode: 'lines', name: 'P (POC) (MW)', line: { color: '#0072BD', width: 2 } }, 0),
             applyTrace({ y: evalDataRaw.freq[pk], type: 'scatter', mode: 'lines', name: 'Frequency', yaxis: 'y2', line: { color: '#D95319', width: 1.5 } }, 1)
           ];
           const layout = getMATLABLayout(drawPanelTitle(pk) + ' | Frequency & Active Power', 'P (MW)', 'F (Hz)', undefined, undefined, 'f_p_' + pk);
@@ -3825,7 +3892,7 @@ export function DailyEvaluationGraph({
           chartArea.appendChild(div);
 
           const traces = [
-            applyTrace({ y: evalDataRaw.pTotal[pk], type: 'scatter', mode: 'lines', name: 'P total', line: { color: '#0072BD', width: 2 } }, 0),
+            applyTrace({ y: evalDataRaw.pTotal[pk], type: 'scatter', mode: 'lines', name: 'P (POC) (MW)', line: { color: '#0072BD', width: 2 } }, 0),
             applyTrace({ y: evalDataRaw.cmdP[pk], type: 'scatter', mode: 'lines', name: 'P command from NCC', showlegend: Boolean(evalDataRaw.cmdP[pk]?.some((v) => v != null && !isNaN(v))), line: { color: '#D95319', width: 1.6, shape: 'hv' } }, 1),
             applyTrace({ y: evalDataRaw.remoteP[pk], type: 'scatter', mode: 'lines', connectgaps: true, name: 'Remote Active Power', showlegend: Boolean(evalDataRaw.remoteP[pk]?.some((v) => v != null && !isNaN(v))), line: { color: '#731A66', width: 1.6, shape: 'hv' } }, 2),
             applyTrace({ y: evalDataRaw.soc[pk], type: 'scatter', mode: 'lines', name: 'SOC', yaxis: 'y2', line: { color: '#D95319', width: 2 } }, 3)
@@ -3843,9 +3910,9 @@ export function DailyEvaluationGraph({
           chartArea.appendChild(div);
 
           const traces = [
-            applyTrace({ y: evalDataRaw.vab[pk], type: 'scatter', mode: 'lines', name: 'Vab', line: { color: '#0072BD', width: 1.2 } }, 0),
-            applyTrace({ y: evalDataRaw.vbc[pk], type: 'scatter', mode: 'lines', name: 'Vbc', line: { color: '#77AC30', width: 1.2 } }, 1),
-            applyTrace({ y: evalDataRaw.vca[pk], type: 'scatter', mode: 'lines', name: 'Vca', line: { color: '#7E2F8E', width: 1.2 } }, 2),
+            applyTrace({ x: filteredTimeX, y: evalData.vab[pk].map((v: any, idx: number) => (v + evalData.vbc[pk][idx] + evalData.vca[pk][idx]) / 3), type: 'scatter', mode: 'lines', name: 'Vavg (kV)', line: { color: '#0072BD', width: 1.2 } }, 0),
+
+
             applyTrace({ y: evalDataRaw.qTotal[pk], type: 'scatter', mode: 'lines', name: 'Q total', yaxis: 'y2', line: { color: '#D95319', width: 1.3 } }, 3),
             applyTrace({ y: evalDataRaw.cmdQ[pk], type: 'scatter', mode: 'lines', name: 'Q command from NCC', showlegend: Boolean(evalDataRaw.cmdQ[pk]?.some((v) => v != null && !isNaN(v))), yaxis: 'y2', line: { color: '#000000', width: 1.6 } }, 4)
           ];
@@ -3873,7 +3940,7 @@ export function DailyEvaluationGraph({
           div1.style.position = 'relative';
         containerDiv.appendChild(div1);
         createPlotWithEvents(div1, [
-          applyTrace({ y: evalDataRaw.pTotal[pk], type: 'scatter', mode: 'lines', name: 'P total', line: { color: '#0072BD', width: 2 } }, 0),
+          applyTrace({ y: evalDataRaw.pTotal[pk], type: 'scatter', mode: 'lines', name: 'P (POC) (MW)', line: { color: '#0072BD', width: 2 } }, 0),
           applyTrace({ y: evalDataRaw.freq[pk], type: 'scatter', mode: 'lines', name: 'Frequency', yaxis: 'y2', line: { color: '#D95319', width: 1.5 } }, 1)
         ], getMATLABLayout('Frequency & Active Power', 'P (MW)', 'F (Hz)', undefined, undefined, activeMetric + '_fp_' + pk), activeMetric + '_fp_' + pk);
 
@@ -3884,7 +3951,7 @@ export function DailyEvaluationGraph({
           div2.style.position = 'relative';
         containerDiv.appendChild(div2);
         createPlotWithEvents(div2, [
-          applyTrace({ y: evalDataRaw.pTotal[pk], type: 'scatter', mode: 'lines', name: 'P total', line: { color: '#0072BD', width: 1.2 } }, 0),
+          applyTrace({ y: evalDataRaw.pTotal[pk], type: 'scatter', mode: 'lines', name: 'P (POC) (MW)', line: { color: '#0072BD', width: 1.2 } }, 0),
           applyTrace({ y: evalDataRaw.cmdP[pk], type: 'scatter', mode: 'lines', name: 'P command from NCC', showlegend: Boolean(evalDataRaw.cmdP[pk]?.some((v) => v != null && !isNaN(v))), line: { color: '#D95319', width: 1.6, shape: 'hv' } }, 1),
           applyTrace({ y: evalDataRaw.remoteP[pk], type: 'scatter', mode: 'lines', connectgaps: true, name: 'Remote Active Power', showlegend: Boolean(evalDataRaw.remoteP[pk]?.some((v) => v != null && !isNaN(v))), line: { color: '#731A66', width: 1.6, shape: 'hv' } }, 2),
           applyTrace({ y: evalDataRaw.soc[pk], type: 'scatter', mode: 'lines', name: 'SOC', yaxis: 'y2', line: { color: '#D95319', width: 1.2 } }, 3)
@@ -3897,9 +3964,9 @@ export function DailyEvaluationGraph({
           div3.style.position = 'relative';
         containerDiv.appendChild(div3);
         createPlotWithEvents(div3, [
-          applyTrace({ y: evalDataRaw.vab[pk], type: 'scatter', mode: 'lines', name: 'Vab', line: { color: '#0072BD', width: 1.2 } }, 0),
-          applyTrace({ y: evalDataRaw.vbc[pk], type: 'scatter', mode: 'lines', name: 'Vbc', line: { color: '#77AC30', width: 1.2 } }, 1),
-          applyTrace({ y: evalDataRaw.vca[pk], type: 'scatter', mode: 'lines', name: 'Vca', line: { color: '#7E2F8E', width: 1.2 } }, 2),
+          applyTrace({ x: filteredTimeX, y: evalData.vab[pk].map((v: any, idx: number) => (v + evalData.vbc[pk][idx] + evalData.vca[pk][idx]) / 3), type: 'scatter', mode: 'lines', name: 'Vavg (kV)', line: { color: '#0072BD', width: 1.2 } }, 0),
+
+
           applyTrace({ y: evalDataRaw.qTotal[pk], type: 'scatter', mode: 'lines', name: 'Q total', yaxis: 'y2', line: { color: '#D95319', width: 1.3 } }, 3),
           applyTrace({ y: evalDataRaw.cmdQ[pk], type: 'scatter', mode: 'lines', name: 'Q command from NCC', showlegend: Boolean(evalDataRaw.cmdQ[pk]?.some((v) => v != null && !isNaN(v))), yaxis: 'y2', line: { color: '#000000', width: 1.8 } }, 4)
         ], getMATLABLayout('Reactive Power & Voltage', 'V (kV)', 'Q (MVar)', undefined, undefined, activeMetric + '_vq_' + pk), activeMetric + '_vq_' + pk);
@@ -3922,7 +3989,7 @@ export function DailyEvaluationGraph({
           div1.style.position = 'relative';
           containerDiv.appendChild(div1);
           createPlotWithEvents(div1, [
-            applyTrace({ y: evalDataRaw.pTotal[pk], type: 'scatter', mode: 'lines', name: 'P total', line: { color: '#0072BD', width: 2 } }, 0),
+            applyTrace({ y: evalDataRaw.pTotal[pk], type: 'scatter', mode: 'lines', name: 'P (POC) (MW)', line: { color: '#0072BD', width: 2 } }, 0),
             applyTrace({ y: evalDataRaw.freq[pk], type: 'scatter', mode: 'lines', name: 'Frequency', yaxis: 'y2', line: { color: '#D95319', width: 1.5 } }, 1)
           ], getMATLABLayout('Frequency & Active Power', 'P (MW)', 'F (Hz)', undefined, undefined, 'fig4_fp_' + pk), 'fig4_fp_' + pk);
 
@@ -3933,7 +4000,7 @@ export function DailyEvaluationGraph({
           div2.style.position = 'relative';
           containerDiv.appendChild(div2);
           createPlotWithEvents(div2, [
-            applyTrace({ y: evalDataRaw.pTotal[pk], type: 'scatter', mode: 'lines', name: 'P total', line: { color: '#0072BD', width: 1.2 } }, 0),
+            applyTrace({ y: evalDataRaw.pTotal[pk], type: 'scatter', mode: 'lines', name: 'P (POC) (MW)', line: { color: '#0072BD', width: 1.2 } }, 0),
             applyTrace({ y: evalDataRaw.cmdP[pk], type: 'scatter', mode: 'lines', name: 'P command from NCC', showlegend: Boolean(evalDataRaw.cmdP[pk]?.some((v) => v != null && !isNaN(v))), line: { color: '#D95319', width: 1.6, shape: 'hv' } }, 1),
             applyTrace({ y: evalDataRaw.remoteP[pk], type: 'scatter', mode: 'lines', connectgaps: true, name: 'Remote Active Power', showlegend: Boolean(evalDataRaw.remoteP[pk]?.some((v) => v != null && !isNaN(v))), line: { color: '#731A66', width: 1.6, shape: 'hv' } }, 2),
             applyTrace({ y: evalDataRaw.soc[pk], type: 'scatter', mode: 'lines', name: 'SOC', yaxis: 'y2', line: { color: '#D95319', width: 1.2 } }, 3)
@@ -3946,9 +4013,9 @@ export function DailyEvaluationGraph({
           div3.style.position = 'relative';
           containerDiv.appendChild(div3);
           createPlotWithEvents(div3, [
-            applyTrace({ y: evalDataRaw.vab[pk], type: 'scatter', mode: 'lines', name: 'Vab', line: { color: '#0072BD', width: 1.2 } }, 0),
-            applyTrace({ y: evalDataRaw.vbc[pk], type: 'scatter', mode: 'lines', name: 'Vbc', line: { color: '#77AC30', width: 1.2 } }, 1),
-            applyTrace({ y: evalDataRaw.vca[pk], type: 'scatter', mode: 'lines', name: 'Vca', line: { color: '#7E2F8E', width: 1.2 } }, 2),
+            applyTrace({ x: filteredTimeX, y: evalData.vab[pk].map((v: any, idx: number) => (v + evalData.vbc[pk][idx] + evalData.vca[pk][idx]) / 3), type: 'scatter', mode: 'lines', name: 'Vavg (kV)', line: { color: '#0072BD', width: 1.2 } }, 0),
+
+
             applyTrace({ y: evalDataRaw.qTotal[pk], type: 'scatter', mode: 'lines', name: 'Q total', yaxis: 'y2', line: { color: '#D95319', width: 1.3 } }, 3),
             applyTrace({ y: evalDataRaw.cmdQ[pk], type: 'scatter', mode: 'lines', name: 'Q command from NCC', showlegend: Boolean(evalDataRaw.cmdQ[pk]?.some((v) => v != null && !isNaN(v))), yaxis: 'y2', line: { color: '#000000', width: 1.8 } }, 4)
           ], getMATLABLayout('Reactive Power & Voltage', 'V (kV)', 'Q (MVar)', undefined, undefined, 'fig4_vq_' + pk), 'fig4_vq_' + pk);
@@ -3991,7 +4058,7 @@ export function DailyEvaluationGraph({
 
           const socStats = evalDataRaw.socStats[pk];
           const traces = [
-            applyTrace({ y: evalDataRaw.pTotal[pk], type: 'scatter', mode: 'lines', name: 'P total', line: { color: '#0072BD', width: 1.2 } }, 0),
+            applyTrace({ y: evalDataRaw.pTotal[pk], type: 'scatter', mode: 'lines', name: 'P (POC) (MW)', line: { color: '#0072BD', width: 1.2 } }, 0),
             applyTrace({ y: evalDataRaw.cmdP[pk], type: 'scatter', mode: 'lines', name: 'P command from NCC', showlegend: Boolean(evalDataRaw.cmdP[pk]?.some((v) => v != null && !isNaN(v))), line: { color: '#D95319', width: 1.6, shape: 'hv' } }, 1),
             applyTrace({ y: evalDataRaw.remoteP[pk], type: 'scatter', mode: 'lines', connectgaps: true, name: 'Remote Active Power', showlegend: Boolean(evalDataRaw.remoteP[pk]?.some((v) => v != null && !isNaN(v))), line: { color: '#731A66', width: 1.6, shape: 'hv' } }, 2),
             applyTrace({ y: evalDataRaw.dispatchP[pk], type: 'scatter', mode: 'lines', name: 'P dispatch allocation', showlegend: Boolean(evalDataRaw.dispatchP[pk]?.some((v) => v != null && !isNaN(v))), line: { color: '#339933', width: 1.8, dash: 'dash' } }, 3),
@@ -4071,9 +4138,9 @@ export function DailyEvaluationGraph({
           chartArea.appendChild(div);
 
           const traces = [
-            applyTrace({ y: evalDataRaw.vab[pk], type: 'scatter', mode: 'lines', name: 'Vab', line: { color: '#0072BD', width: 1.2 } }, 0),
-            applyTrace({ y: evalDataRaw.vbc[pk], type: 'scatter', mode: 'lines', name: 'Vbc', line: { color: '#77AC30', width: 1.2 } }, 1),
-            applyTrace({ y: evalDataRaw.vca[pk], type: 'scatter', mode: 'lines', name: 'Vca', line: { color: '#7E2F8E', width: 1.2 } }, 2),
+            applyTrace({ x: filteredTimeX, y: evalData.vab[pk].map((v: any, idx: number) => (v + evalData.vbc[pk][idx] + evalData.vca[pk][idx]) / 3), type: 'scatter', mode: 'lines', name: 'Vavg (kV)', line: { color: '#0072BD', width: 1.2 } }, 0),
+
+
             applyTrace({ y: evalDataRaw.qTotal[pk], type: 'scatter', mode: 'lines', name: 'Q total', yaxis: 'y2', line: { color: '#D95319', width: 1.3 } }, 3),
             applyTrace({ y: evalDataRaw.cmdQ[pk], type: 'scatter', mode: 'lines', name: 'Q command from NCC', showlegend: Boolean((evalDataRaw?.cmdQ?.[pk] || evalDataRaw?.cmdQ?.[pk])?.some((v) => v != null && !isNaN(v))), yaxis: 'y2', line: { color: '#000000', width: 1.8 } }, 4)
           ];
@@ -4496,7 +4563,7 @@ export function DailyEvaluationGraph({
         <div className="h-[280px] w-full relative mb-1" key={pk}>
           <Plot
             data={[
-              applyTrace({ x: filteredTimeX, y: evalData.pTotal[pk], type: 'scatter', mode: 'lines', name: 'P total',    line: { color: '#0072BD', width: 2 } }, 0),
+              applyTrace({ x: filteredTimeX, y: evalData.pTotal[pk],  type: 'scatter', mode: 'lines', name: 'P (POC) (MW)',             line: { color: '#0072BD', width: 2 } }, 0),
               applyTrace({ x: filteredTimeX, y: evalData.freq[pk],   type: 'scatter', mode: 'lines', name: 'Frequency',  yaxis: 'y2', line: { color: '#D95319', width: 1.5 } }, 1),
             ]}
             layout={getMATLABLayout(title, 'P (MW)', 'F (Hz)', undefined, undefined, `f_p_${pk}`)}
@@ -4524,10 +4591,12 @@ export function DailyEvaluationGraph({
         <div className="h-[280px] w-full relative mb-1" key={pk}>
           <Plot
             data={[
-              applyTrace({ x: filteredTimeX, y: evalData.pTotal[pk],  type: 'scatter', mode: 'lines', name: 'P total',             line: { color: '#0072BD', width: 2 } }, 0),
-              applyTrace({ x: filteredTimeX, y: evalData.cmdP[pk],    type: 'scatter', mode: 'lines', name: 'P command from NCC', showlegend: Boolean((evalData?.cmdP?.[pk] || evalData?.cmdP?.[pk])?.some((v) => v != null && !isNaN(v))),   line: { color: '#D95319', width: 1.6, shape: 'hv' } }, 1),
-              applyTrace({ x: filteredTimeX, y: evalData.remoteP[pk], type: 'scatter', mode: 'lines', connectgaps: true, name: 'Remote Active Power',  line: { color: '#731A66', width: 1.6, shape: 'hv' } }, 2),
-              applyTrace({ x: filteredTimeX, y: evalData.soc[pk],     type: 'scatter', mode: 'lines', name: 'SOC', yaxis: 'y2',     line: { color: '#D95319', width: 2 } }, 3),
+              applyTrace({ x: filteredTimeX, y: evalData.pPccPVS[pk]?.some((v: any) => v != null && !isNaN(v)) ? evalData.pPccPVS[pk] : evalData.pTotal[pk],  type: 'scatter', mode: 'lines', name: 'P (POC) (MW)',             line: { color: '#0072BD', width: 2 } }, 0),
+              applyTrace({ x: filteredTimeX, y: evalData.pPV[pk],     type: 'scatter', mode: 'lines', name: 'P (PV) (MW)', showlegend: Boolean(evalData.pPV[pk]?.some((v) => v != null && !isNaN(v))), line: { color: '#EDB120', width: 2 } }, 10),
+              applyTrace({ x: filteredTimeX, y: evalData.pBESS[pk],   type: 'scatter', mode: 'lines', name: 'P (BESS) (MW)', showlegend: Boolean(evalData.pBESS[pk]?.some((v) => v != null && !isNaN(v))), line: { color: '#77AC30', width: 2 } }, 11),
+              applyTrace({ x: filteredTimeX, y: evalData.cmdP[pk],    type: 'scatter', mode: 'lines', name: 'P command from NCC', showlegend: Boolean((evalData?.cmdP?.[pk] || evalData?.cmdP?.[pk])?.some((v) => v != null && !isNaN(v))),   line: { color: '#D95319', width: 1.6, shape: 'hv' } }, 3),
+              applyTrace({ x: filteredTimeX, y: evalData.remoteP[pk], type: 'scatter', mode: 'lines', connectgaps: true, name: 'Remote Active Power',  line: { color: '#731A66', width: 1.6, shape: 'hv' } }, 4),
+              applyTrace({ x: filteredTimeX, y: evalData.soc[pk],     type: 'scatter', mode: 'lines', name: 'SOC', yaxis: 'y2',     line: { color: '#D95319', width: 2 } }, 5),
             ]}
             layout={getMATLABLayout(title, 'P (MW)', 'SOC (%)', undefined, undefined, `soc_p_${pk}`)}
             useResizeHandler={true} style={{ width: '100%', height: '100%' }} config={plotCfgZoom} onClick={undefined} onHover={(e) => handleHover(e, `soc_p_${pk}`)} onUnhover={handleUnhover} onRelayout={(e) => handleRelayout(e, `soc_p_${pk}`)} onClickAnnotation={(e) => handleClickAnnotation(e, `soc_p_${pk}`)}
@@ -4554,9 +4623,9 @@ export function DailyEvaluationGraph({
         <div className="h-[280px] w-full relative mb-1" key={pk}>
           <Plot
             data={[
-              applyTrace({ x: filteredTimeX, y: evalData.vab[pk],    type: 'scatter', mode: 'lines', name: 'Vab',                line: { color: '#0072BD', width: 1.2 } }, 0),
-              applyTrace({ x: filteredTimeX, y: evalData.vbc[pk],    type: 'scatter', mode: 'lines', name: 'Vbc',                line: { color: '#77AC30', width: 1.2 } }, 1),
-              applyTrace({ x: filteredTimeX, y: evalData.vca[pk],    type: 'scatter', mode: 'lines', name: 'Vca',                line: { color: '#7E2F8E', width: 1.2 } }, 2),
+              applyTrace({ x: filteredTimeX, y: evalData.vab[pk].map((v: any, idx: number) => (v + evalData.vbc[pk][idx] + evalData.vca[pk][idx]) / 3), type: 'scatter', mode: 'lines', name: 'Vavg (kV)', line: { color: '#0072BD', width: 1.2 } }, 0),
+
+
               applyTrace({ x: filteredTimeX, y: evalData.qTotal[pk], type: 'scatter', mode: 'lines', name: 'Q total',            yaxis: 'y2', line: { color: '#D95319', width: 1.3 } }, 3),
               applyTrace({ x: filteredTimeX, y: evalData.cmdQ[pk],   type: 'scatter', mode: 'lines', name: 'Q command from NCC', showlegend: Boolean(evalData.cmdQ[pk]?.some((v) => v != null && !isNaN(v))), yaxis: 'y2', line: { color: '#000000', width: 1.6 } }, 4),
             ]}
@@ -4585,7 +4654,7 @@ export function DailyEvaluationGraph({
           <div className="h-[280px] w-full relative mb-1">
             <Plot
               data={[
-                applyTrace({ x: filteredTimeX, y: evalData.pTotal[pk], type: 'scatter', mode: 'lines', name: 'P total',   line: { color: '#0072BD', width: 2 } }, 0),
+                applyTrace({ x: filteredTimeX, y: evalData.pTotal[pk],  type: 'scatter', mode: 'lines', name: 'P (POC) (MW)',             line: { color: '#0072BD', width: 2 } }, 0),
                 applyTrace({ x: filteredTimeX, y: evalData.freq[pk],   type: 'scatter', mode: 'lines', name: 'Frequency', yaxis: 'y2', line: { color: '#D95319', width: 1.5 } }, 1),
               ]}
               layout={getMATLABLayout('Frequency & Active Power', 'P (MW)', 'F (Hz)', undefined, undefined, `pf_${pk}_fp`)}
@@ -4595,7 +4664,9 @@ export function DailyEvaluationGraph({
           <div className="h-[280px] w-full relative mb-1">
             <Plot
               data={[
-                applyTrace({ x: filteredTimeX, y: evalData.pTotal[pk],  type: 'scatter', mode: 'lines', name: 'P total',            line: { color: '#0072BD', width: 1.2 } }, 0),
+                applyTrace({ x: filteredTimeX, y: evalData.pPccPVS[pk]?.some((v: any) => v != null && !isNaN(v)) ? evalData.pPccPVS[pk] : evalData.pTotal[pk],  type: 'scatter', mode: 'lines', name: 'P (POC) (MW)',            line: { color: '#0072BD', width: 1.2 } }, 0),
+                applyTrace({ x: filteredTimeX, y: evalData.pPV[pk],     type: 'scatter', mode: 'lines', name: 'P (PV) (MW)', showlegend: Boolean(evalData.pPV[pk]?.some((v) => v != null && !isNaN(v))), line: { color: '#EDB120', width: 2 } }, 10),
+                applyTrace({ x: filteredTimeX, y: evalData.pBESS[pk],   type: 'scatter', mode: 'lines', name: 'P (BESS) (MW)', showlegend: Boolean(evalData.pBESS[pk]?.some((v) => v != null && !isNaN(v))), line: { color: '#77AC30', width: 2 } }, 11),
                 applyTrace({ x: filteredTimeX, y: evalData.cmdP[pk],    type: 'scatter', mode: 'lines', name: 'P command from NCC', showlegend: Boolean(evalData.cmdP[pk]?.some((v) => v != null && !isNaN(v))), line: { color: '#D95319', width: 1.6, shape: 'hv' } }, 1),
                 applyTrace({ x: filteredTimeX, y: evalData.remoteP[pk], type: 'scatter', mode: 'lines', connectgaps: true, name: 'Remote Active Power', showlegend: Boolean(evalData.remoteP[pk]?.some((v) => v != null && !isNaN(v))), line: { color: '#731A66', width: 1.6, shape: 'hv' } }, 2),
                 applyTrace({ x: filteredTimeX, y: evalData.soc[pk],     type: 'scatter', mode: 'lines', name: 'SOC', yaxis: 'y2',   line: { color: '#D95319', width: 1.2 } }, 3),
@@ -4607,9 +4678,9 @@ export function DailyEvaluationGraph({
           <div className="h-[280px] w-full relative mb-1">
             <Plot
               data={[
-                applyTrace({ x: filteredTimeX, y: evalData.vab[pk],    type: 'scatter', mode: 'lines', name: 'Vab',                line: { color: '#0072BD', width: 1.2 } }, 0),
-                applyTrace({ x: filteredTimeX, y: evalData.vbc[pk],    type: 'scatter', mode: 'lines', name: 'Vbc',                line: { color: '#77AC30', width: 1.2 } }, 1),
-                applyTrace({ x: filteredTimeX, y: evalData.vca[pk],    type: 'scatter', mode: 'lines', name: 'Vca',                line: { color: '#7E2F8E', width: 1.2 } }, 2),
+                applyTrace({ x: filteredTimeX, y: evalData.vab[pk].map((v: any, idx: number) => (v + evalData.vbc[pk][idx] + evalData.vca[pk][idx]) / 3), type: 'scatter', mode: 'lines', name: 'Vavg (kV)', line: { color: '#0072BD', width: 1.2 } }, 0),
+
+
                 applyTrace({ x: filteredTimeX, y: evalData.qTotal[pk], type: 'scatter', mode: 'lines', name: 'Q total',            yaxis: 'y2', line: { color: '#D95319', width: 1.3 } }, 3),
                 applyTrace({ x: filteredTimeX, y: evalData.cmdQ[pk],   type: 'scatter', mode: 'lines', name: 'Q command from NCC', showlegend: Boolean(evalData.cmdQ[pk]?.some((v) => v != null && !isNaN(v))), yaxis: 'y2', line: { color: '#000000', width: 1.8 } }, 4),
               ]}
@@ -4643,7 +4714,7 @@ export function DailyEvaluationGraph({
           <div className="h-[280px] w-full relative mb-1">
             <Plot
               data={[
-                applyTrace({ x: filteredTimeX, y: evalData.pTotal[pk], type: 'scatter', mode: 'lines', name: 'P total',   line: { color: '#0072BD', width: 2 } }, 0),
+                applyTrace({ x: filteredTimeX, y: evalData.pTotal[pk],  type: 'scatter', mode: 'lines', name: 'P (POC) (MW)',             line: { color: '#0072BD', width: 2 } }, 0),
                 applyTrace({ x: filteredTimeX, y: evalData.freq[pk],   type: 'scatter', mode: 'lines', name: 'Frequency', yaxis: 'y2', line: { color: '#D95319', width: 1.5 } }, 1),
               ]}
               layout={getMATLABLayout('Frequency & Active Power', 'P (MW)', 'F (Hz)', undefined, undefined, `fig4_fp_${pk}`)}
@@ -4653,7 +4724,9 @@ export function DailyEvaluationGraph({
           <div className="h-[280px] w-full relative mb-1">
             <Plot
               data={[
-                applyTrace({ x: filteredTimeX, y: evalData.pTotal[pk],  type: 'scatter', mode: 'lines', name: 'P total',            line: { color: '#0072BD', width: 1.2 } }, 0),
+                applyTrace({ x: filteredTimeX, y: evalData.pPccPVS[pk]?.some((v: any) => v != null && !isNaN(v)) ? evalData.pPccPVS[pk] : evalData.pTotal[pk],  type: 'scatter', mode: 'lines', name: 'P (POC) (MW)',            line: { color: '#0072BD', width: 1.2 } }, 0),
+                applyTrace({ x: filteredTimeX, y: evalData.pPV[pk],     type: 'scatter', mode: 'lines', name: 'P (PV) (MW)', showlegend: Boolean(evalData.pPV[pk]?.some((v) => v != null && !isNaN(v))), line: { color: '#EDB120', width: 2 } }, 10),
+                applyTrace({ x: filteredTimeX, y: evalData.pBESS[pk],   type: 'scatter', mode: 'lines', name: 'P (BESS) (MW)', showlegend: Boolean(evalData.pBESS[pk]?.some((v) => v != null && !isNaN(v))), line: { color: '#77AC30', width: 2 } }, 11),
                 applyTrace({ x: filteredTimeX, y: evalData.cmdP[pk],    type: 'scatter', mode: 'lines', name: 'P command from NCC', showlegend: Boolean(evalData.cmdP[pk]?.some((v) => v != null && !isNaN(v))), line: { color: '#D95319', width: 1.6, shape: 'hv' } }, 1),
                 applyTrace({ x: filteredTimeX, y: evalData.remoteP[pk], type: 'scatter', mode: 'lines', connectgaps: true, name: 'Remote Active Power', showlegend: Boolean(evalData.remoteP[pk]?.some((v) => v != null && !isNaN(v))), line: { color: '#731A66', width: 1.6, shape: 'hv' } }, 2),
                 applyTrace({ x: filteredTimeX, y: evalData.soc[pk],     type: 'scatter', mode: 'lines', name: 'SOC', yaxis: 'y2',   line: { color: '#D95319', width: 1.2 } }, 3),
@@ -4665,9 +4738,9 @@ export function DailyEvaluationGraph({
           <div className="h-[280px] w-full relative mb-1">
             <Plot
               data={[
-                applyTrace({ x: filteredTimeX, y: evalData.vab[pk],    type: 'scatter', mode: 'lines', name: 'Vab',                line: { color: '#0072BD', width: 1.2 } }, 0),
-                applyTrace({ x: filteredTimeX, y: evalData.vbc[pk],    type: 'scatter', mode: 'lines', name: 'Vbc',                line: { color: '#77AC30', width: 1.2 } }, 1),
-                applyTrace({ x: filteredTimeX, y: evalData.vca[pk],    type: 'scatter', mode: 'lines', name: 'Vca',                line: { color: '#7E2F8E', width: 1.2 } }, 2),
+                applyTrace({ x: filteredTimeX, y: evalData.vab[pk].map((v: any, idx: number) => (v + evalData.vbc[pk][idx] + evalData.vca[pk][idx]) / 3), type: 'scatter', mode: 'lines', name: 'Vavg (kV)', line: { color: '#0072BD', width: 1.2 } }, 0),
+
+
                 applyTrace({ x: filteredTimeX, y: evalData.qTotal[pk], type: 'scatter', mode: 'lines', name: 'Q total',            yaxis: 'y2', line: { color: '#D95319', width: 1.3 } }, 3),
                 applyTrace({ x: filteredTimeX, y: evalData.cmdQ[pk],   type: 'scatter', mode: 'lines', name: 'Q command from NCC', showlegend: Boolean(evalData.cmdQ[pk]?.some((v) => v != null && !isNaN(v))), yaxis: 'y2', line: { color: '#000000', width: 1.8 } }, 4),
               ]}
@@ -4705,7 +4778,7 @@ export function DailyEvaluationGraph({
             y: evalData.pTotal[pKey],
             type: 'scatter',
             mode: 'lines',
-            name: 'P total',
+            name: 'P (POC) (MW)',
             line: { color: '#0072BD', width: 1.2 }
           },
           {
@@ -4899,9 +4972,9 @@ export function DailyEvaluationGraph({
         <div className="h-[280px] w-full relative mb-1" key={pk}>
           <Plot
             data={[
-              applyTrace({ x: filteredTimeX, y: evalData.vab[pk],    type: 'scatter', mode: 'lines', name: 'Vab',                line: { color: '#0072BD', width: 1.2 } }, 0),
-              applyTrace({ x: filteredTimeX, y: evalData.vbc[pk],    type: 'scatter', mode: 'lines', name: 'Vbc',                line: { color: '#77AC30', width: 1.2 } }, 1),
-              applyTrace({ x: filteredTimeX, y: evalData.vca[pk],    type: 'scatter', mode: 'lines', name: 'Vca',                line: { color: '#7E2F8E', width: 1.2 } }, 2),
+              applyTrace({ x: filteredTimeX, y: evalData.vab[pk].map((v: any, idx: number) => (v + evalData.vbc[pk][idx] + evalData.vca[pk][idx]) / 3), type: 'scatter', mode: 'lines', name: 'Vavg (kV)', line: { color: '#0072BD', width: 1.2 } }, 0),
+
+
               applyTrace({ x: filteredTimeX, y: evalData.qTotal[pk], type: 'scatter', mode: 'lines', name: 'Q total',            yaxis: 'y2', line: { color: '#D95319', width: 1.3 } }, 3),
               applyTrace({ x: filteredTimeX, y: evalData.cmdQ[pk],   type: 'scatter', mode: 'lines', name: 'Q command from NCC', showlegend: Boolean((evalData?.cmdQ?.[pk] || evalData?.cmdQ?.[pk])?.some((v) => v != null && !isNaN(v))), yaxis: 'y2', line: { color: '#000000', width: 1.8 } }, 4),
             ]}

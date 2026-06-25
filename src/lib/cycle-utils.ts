@@ -118,8 +118,8 @@ export async function parseCycleExcelFile(file: File, path: string): Promise<ESS
   let headers = headerRow.map(h => h == null ? '' : String(h).trim());
   let lowerVars = headers.map(h => h.toLowerCase());
 
-  let plantIdx = lowerVars.findIndex(h => h.includes('plant') && h.includes('name'));
-  let deviceIdx = lowerVars.findIndex(h => h.includes('device') && h.includes('name'));
+  let plantIdx = lowerVars.findIndex(h => (h.includes('plant') || h.includes('site')) && h.includes('name'));
+  let deviceIdx = lowerVars.findIndex(h => (h.includes('device') && h.includes('name')) || h.includes('manageobject'));
   let startIdx = lowerVars.findIndex(h => h.includes('start') && h.includes('time'));
   let eqIdx = headers.findIndex(h => h === 'Equivalent number of cycles');
   if (eqIdx === -1) {
@@ -130,8 +130,8 @@ export async function parseCycleExcelFile(file: File, path: string): Promise<ESS
     headerRow = aoa[0] || [];
     headers = headerRow.map(h => h == null ? '' : String(h).trim());
     lowerVars = headers.map(h => h.toLowerCase());
-    plantIdx = lowerVars.findIndex(h => h.includes('plant') && h.includes('name'));
-    deviceIdx = lowerVars.findIndex(h => h.includes('device') && h.includes('name'));
+    plantIdx = lowerVars.findIndex(h => (h.includes('plant') || h.includes('site')) && h.includes('name'));
+    deviceIdx = lowerVars.findIndex(h => (h.includes('device') && h.includes('name')) || h.includes('manageobject'));
     startIdx = lowerVars.findIndex(h => h.includes('start') && h.includes('time'));
     eqIdx = headers.findIndex(h => h === 'Equivalent number of cycles');
     if (eqIdx === -1) {
