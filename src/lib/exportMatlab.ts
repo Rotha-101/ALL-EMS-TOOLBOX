@@ -172,6 +172,7 @@ axs = [];
   const footerCode = (safeName: string) => `
 if SAVE_FIG_AND_CLOSE
     savefig(fig, '${safeName}.fig');
+    save('evalData.mat', 'data');
     close(fig);
 end
 `;
@@ -475,10 +476,114 @@ ${footerCode(safeName)}
     allScripts.push({ name: scriptName, script, safeName });
   };
 
+  const generateSinglePlantSummary = () => {
+    const scriptName = 'Daily_Evaluation_Summary';
+    
+    const dateStr = (evalData.dataDate || '').replace(/-/g, '');
+    const projLabel = project.includes('SNTL') ? project + 'MWH' : project;
+    const safeName = `${projLabel}_${scriptName}_${dateStr}`;
+    
+    let script = baseHeader('Daily Evaluation Summary', 'evalData.json').replace('__TILES__', '3');
+    script += `
+SOC_HIGH_rng = [94.8 95.2];
+SOC_LOW_rng  = [4.9  5.3 ];
+
+pk = 'plant1';
+pTotal = data.pTotal.(pk);
+cmdP = data.cmdP.(pk);
+remoteP = data.remoteP.(pk);
+freq = data.freq.(pk);
+soc = data.soc.(pk);
+vab = data.vab.(pk);
+vbc = data.vbc.(pk);
+vca = data.vca.(pk);
+qTotal = data.qTotal.(pk);
+cmdQ = data.cmdQ.(pk);
+
+% TILE 1: Frequency & Active Power
+ax1 = nexttile; axs = ax1;
+yyaxis left; ax1.YColor = '#0072BD'; hold on;
+legH1 = plot(t, pTotal, '-', 'Color', '#0072BD', 'LineWidth', ${graphConfig.lineWidths[0]});
+legT1 = {'P (POC)'};
+yDataP = pTotal(:);
+ylabel('P (MW)'); ylim(centeredYLim(yDataP, P_center_MW, 1.05));
+if ${graphConfig.showGrid ? 'true' : 'false'}, grid on; end
+
+yyaxis right; ax1.YColor = '#D95319'; hold on;
+pFreq = plot(t, freq, '-', 'Color', '#D95319', 'LineWidth', 1.5);
+ylabel('F (Hz)'); ylim(centeredYLim(freq(:), F_center, 1.05));
+legH1(end+1) = pFreq; legT1{end+1} = 'Frequency';
+title('Frequency & Active Power');
+legend(legH1, legT1, 'Location', 'northwest');
+formatAxis(ax1, t, false);
+
+% TILE 2: SOC & Active Power
+ax2 = nexttile; axs = [axs, ax2];
+yyaxis left; ax2.YColor = '#0072BD'; hold on;
+legH2 = plot(t, pTotal, '-', 'Color', '#0072BD', 'LineWidth', ${graphConfig.lineWidths[0]});
+legT2 = {'P (POC)'};
+if any(~isnan(cmdP))
+    pCmd = stairs(t, cmdP, 'LineWidth', 1.6, 'Color', cmdColor);
+    legH2(end+1) = pCmd; legT2{end+1} = 'P command from NCC';
+end
+if any(~isnan(remoteP))
+    pRem = stairs(t, remoteP, 'LineWidth', 1.6, 'Color', remotePowerColor);
+    legH2(end+1) = pRem; legT2{end+1} = 'Remote Active Power';
+end
+ylabel('P (MW)'); ylim(centeredYLim(yDataP, P_center_MW, 1.05));
+if ${graphConfig.showGrid ? 'true' : 'false'}, grid on; end
+
+yyaxis right; ax2.YColor = '#D95319'; hold on;
+pSOC = plot(t, soc, '-', 'Color', '#D95319', 'LineWidth', ${graphConfig.lineWidths[3]});
+ylabel('SOC (%)');
+legH2(end+1) = pSOC; legT2{end+1} = 'SOC';
+title('SOC & Active Power');
+legend(legH2, legT2, 'Location', 'northwest');
+formatAxis(ax2, t, false);
+
+% TILE 3: Reactive Power & Voltage
+ax3 = nexttile; axs = [axs, ax3];
+yyaxis left; ax3.YColor = '#0072BD'; hold on;
+pVab = plot(t, vab, '-', 'Color', vabColor, 'LineWidth', ${graphConfig.lineWidths[0]});
+pVbc = plot(t, vbc, '-', 'Color', vbcColor, 'LineWidth', ${graphConfig.lineWidths[1]});
+pVca = plot(t, vca, '-', 'Color', vcaColor, 'LineWidth', ${graphConfig.lineWidths[2]});
+ylabel('V (kV)');
+if ${graphConfig.showGrid ? 'true' : 'false'}, grid on; end
+
+yyaxis right; ax3.YColor = '#D95319'; hold on;
+legH3 = [pVab, pVbc, pVca];
+legT3 = {'Vab', 'Vbc', 'Vca'};
+
+pQ = plot(t, qTotal, '-', 'Color', '#D95319', 'LineWidth', ${graphConfig.lineWidths[3]});
+legH3(end+1) = pQ; legT3{end+1} = 'Q total';
+yDataQ = qTotal(:);
+
+if any(~isnan(cmdQ))
+    pCmdQ = stairs(t, cmdQ, 'LineWidth', 1.6, 'Color', cmdQColor, 'LineStyle', '--');
+    legH3(end+1) = pCmdQ; legT3{end+1} = 'Q command from NCC';
+    yDataQ = [yDataQ; cmdQ(:)];
+end
+ylabel('Q (MVar)'); ylim(centeredYLim(yDataQ, Q_center_MVar, 1.05));
+title('Reactive Power & Voltage');
+legend(legH3, legT3, 'Location', 'northwest');
+formatAxis(ax3, t, true);
+
+linkaxes(axs, 'x');
+${commonHelpers}
+${footerCode(safeName)}
+\`;
+    allScripts.push({ name: scriptName, script, safeName });
+  };
+
   // Add the scripts
-  plants.forEach(pk => generatePowerflow(pk));
-  generateSocAllPlants();
-  generateVoltReactiveAllPlants();
+  if (isBessProject) {
+    generateSinglePlantSummary();
+    plants.forEach(pk => generatePowerflow(pk));
+  } else {
+    plants.forEach(pk => generatePowerflow(pk));
+    generateSocAllPlants();
+    generateVoltReactiveAllPlants();
+  }
 
   return allScripts;
 };
