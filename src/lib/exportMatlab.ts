@@ -97,14 +97,25 @@ function [tHit, yHit, usedBand] = detectLowSOCAfterHigh(tt, yData, rng, tHigh)
 end
 
 function makeDraggable(h)
-    % Use string-based callbacks to ensure they serialize properly into .fig files
-    dragCmd = ['fig=gcbf; if isempty(fig), return; end; ' ...
-               'setappdata(fig,''dPt'',get(fig,''CurrentPoint'')); ' ...
-               'setappdata(fig,''dPos'',get(gcbo,''Position'')); ' ...
-               'setappdata(fig,''dObj'',gcbo); ' ...
-               'set(fig,''WindowButtonMotionFcn'',''fig=gcbf; stPt=getappdata(fig,''''dPt''''); stPos=getappdata(fig,''''dPos''''); obj=getappdata(fig,''''dObj''''); cPt=get(fig,''''CurrentPoint''''); dx=(cPt(1)-stPt(1))/fig.Position(3); dy=(cPt(2)-stPt(2))/fig.Position(4); obj.Position=[stPos(1)+dx, stPos(2)+dy, stPos(3), stPos(4)];''); ' ...
-               'set(fig,''WindowButtonUpFcn'',''fig=gcbf; set(fig,''''WindowButtonMotionFcn'''',''''''''); set(fig,''''WindowButtonUpFcn'''','''''''');'');'];
-    set(h, 'ButtonDownFcn', dragCmd);
+    set(h, 'ButtonDownFcn', @dragStart);
+    function dragStart(src, ~)
+        fig = ancestor(src, 'figure');
+        if isempty(fig), return; end
+        startPt = get(fig, 'CurrentPoint');
+        startPos = src.Position;
+        set(fig, 'WindowButtonMotionFcn', @dragging);
+        set(fig, 'WindowButtonUpFcn', @dragStop);
+        function dragging(~, ~)
+            currPt = get(fig, 'CurrentPoint');
+            dx = (currPt(1) - startPt(1)) / fig.Position(3);
+            dy = (currPt(2) - startPt(2)) / fig.Position(4);
+            src.Position = [startPos(1)+dx, startPos(2)+dy, startPos(3), startPos(4)];
+        end
+        function dragStop(~, ~)
+            set(fig, 'WindowButtonMotionFcn', '');
+            set(fig, 'WindowButtonUpFcn', '');
+        end
+    end
 end
 `;
 
@@ -530,24 +541,6 @@ title('SOC & Active Power');
 legend(legH2, legT2, 'Location', 'northwest');
 formatAxis(ax2, t, false);
 
-% Daily Cycle Annotation
-try
-    if isfield(data, 'dailyCycle') && isfield(data.dailyCycle, pk), dCyc = data.dailyCycle.(pk); else, dCyc = NaN; end
-    if isfield(data, 'totalCycle') && isfield(data.totalCycle, pk), tCyc = data.totalCycle.(pk); else, tCyc = NaN; end
-    if isfield(data, 'dataDate'), dateStrPrint = string(data.dataDate); else, dateStrPrint = "N/A"; end
-
-    if ~isnan(dCyc) || ~isnan(tCyc)
-        strBox = ["Daily cycle (" + dateStrPrint + "):", ...
-                  "  Cycle Plant Avg = " + sprintf('%.3f', dCyc), ...
-                  "", ...
-                  "Total cycle:", ...
-                  "  Total Plant Avg = " + sprintf('%.3f', tCyc)];
-        tb = annotation('textbox', [0.82 0.55 0.13 0.1], 'String', strBox, 'BackgroundColor', 'w', 'EdgeColor', [0.8 0.8 0.8], 'FontSize', 9, 'FitBoxToText', 'on');
-        makeDraggable(tb);
-    end
-catch
-end
-
 % TILE 3: Reactive Power & Voltage
 ax3 = nexttile; axs = [axs, ax3];
 yyaxis left; ax3.YColor = '#0072BD'; hold on;
@@ -576,6 +569,25 @@ legend(legH3, legT3, 'Location', 'northwest');
 formatAxis(ax3, t, true);
 
 linkaxes(axs, 'x');
+
+% Daily Cycle Annotation
+try
+    if isfield(data, 'dailyCycle') && isfield(data.dailyCycle, pk), dCyc = data.dailyCycle.(pk); else, dCyc = NaN; end
+    if isfield(data, 'totalCycle') && isfield(data.totalCycle, pk), tCyc = data.totalCycle.(pk); else, tCyc = NaN; end
+    if isfield(data, 'dataDate'), dateStrPrint = string(data.dataDate); else, dateStrPrint = "N/A"; end
+
+    if ~isnan(dCyc) || ~isnan(tCyc)
+        strBox = ["Daily cycle (" + dateStrPrint + "):", ...
+                  "  Cycle Plant Avg = " + sprintf('%.3f', dCyc), ...
+                  "", ...
+                  "Total cycle:", ...
+                  "  Total Plant Avg = " + sprintf('%.3f', tCyc)];
+        tb = annotation('textbox', [0.82 0.55 0.13 0.1], 'String', strBox, 'BackgroundColor', 'w', 'EdgeColor', [0.8 0.8 0.8], 'FontSize', 9, 'FitBoxToText', 'on');
+        makeDraggable(tb);
+    end
+catch
+end
+
 ${commonHelpers}
 ${footerCode(safeName)}
 `;
