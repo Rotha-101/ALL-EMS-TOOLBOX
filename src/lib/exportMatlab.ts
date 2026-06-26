@@ -571,7 +571,7 @@ formatAxis(ax3, t, true);
 linkaxes(axs, 'x');
 ${commonHelpers}
 ${footerCode(safeName)}
-\`;
+`;
     allScripts.push({ name: scriptName, script, safeName });
   };
 
