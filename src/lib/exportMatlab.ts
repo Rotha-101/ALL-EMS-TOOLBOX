@@ -50,6 +50,28 @@ function formatAxis(ax, t, showLabels)
         xticklabels(ax, {});
     end
 end
+
+function makeDraggable(h)
+    set(h, 'ButtonDownFcn', @dragStart);
+    function dragStart(src, ~)
+        fig = ancestor(src, 'figure');
+        if isempty(fig), return; end
+        startPt = get(fig, 'CurrentPoint');
+        startPos = src.Position;
+        set(fig, 'WindowButtonMotionFcn', @dragging);
+        set(fig, 'WindowButtonUpFcn', @dragStop);
+        function dragging(~, ~)
+            currPt = get(fig, 'CurrentPoint');
+            dx = (currPt(1) - startPt(1)) / fig.Position(3);
+            dy = (currPt(2) - startPt(2)) / fig.Position(4);
+            src.Position = [startPos(1)+dx, startPos(2)+dy, startPos(3), startPos(4)];
+        end
+        function dragStop(~, ~)
+            set(fig, 'WindowButtonMotionFcn', '');
+            set(fig, 'WindowButtonUpFcn', '');
+        end
+    end
+end
 `;
 
   const socHelpers = `
@@ -92,28 +114,6 @@ function [tHit, yHit, usedBand] = detectLowSOCAfterHigh(tt, yData, rng, tHigh)
         if ~isempty(idxSub)
             idx = startIdx + idxSub - 1;
             tHit = tt(idx);
-        end
-    end
-end
-
-function makeDraggable(h)
-    set(h, 'ButtonDownFcn', @dragStart);
-    function dragStart(src, ~)
-        fig = ancestor(src, 'figure');
-        if isempty(fig), return; end
-        startPt = get(fig, 'CurrentPoint');
-        startPos = src.Position;
-        set(fig, 'WindowButtonMotionFcn', @dragging);
-        set(fig, 'WindowButtonUpFcn', @dragStop);
-        function dragging(~, ~)
-            currPt = get(fig, 'CurrentPoint');
-            dx = (currPt(1) - startPt(1)) / fig.Position(3);
-            dy = (currPt(2) - startPt(2)) / fig.Position(4);
-            src.Position = [startPos(1)+dx, startPos(2)+dy, startPos(3), startPos(4)];
-        end
-        function dragStop(~, ~)
-            set(fig, 'WindowButtonMotionFcn', '');
-            set(fig, 'WindowButtonUpFcn', '');
         end
     end
 end
