@@ -97,25 +97,14 @@ function [tHit, yHit, usedBand] = detectLowSOCAfterHigh(tt, yData, rng, tHigh)
 end
 
 function makeDraggable(h)
-    set(h, 'ButtonDownFcn', @dragStart);
-    function dragStart(src, ~)
-        fig = ancestor(src, 'figure');
-        if isempty(fig), return; end
-        startPt = get(fig, 'CurrentPoint');
-        startPos = src.Position;
-        set(fig, 'WindowButtonMotionFcn', @dragging);
-        set(fig, 'WindowButtonUpFcn', @dragStop);
-        function dragging(~, ~)
-            currPt = get(fig, 'CurrentPoint');
-            dx = (currPt(1) - startPt(1)) / fig.Position(3);
-            dy = (currPt(2) - startPt(2)) / fig.Position(4);
-            src.Position = [startPos(1)+dx, startPos(2)+dy, startPos(3), startPos(4)];
-        end
-        function dragStop(~, ~)
-            set(fig, 'WindowButtonMotionFcn', '');
-            set(fig, 'WindowButtonUpFcn', '');
-        end
-    end
+    % Use string-based callbacks to ensure they serialize properly into .fig files
+    dragCmd = ['fig=gcbf; if isempty(fig), return; end; ' ...
+               'setappdata(fig,''dPt'',get(fig,''CurrentPoint'')); ' ...
+               'setappdata(fig,''dPos'',get(gcbo,''Position'')); ' ...
+               'setappdata(fig,''dObj'',gcbo); ' ...
+               'set(fig,''WindowButtonMotionFcn'',''fig=gcbf; stPt=getappdata(fig,''''dPt''''); stPos=getappdata(fig,''''dPos''''); obj=getappdata(fig,''''dObj''''); cPt=get(fig,''''CurrentPoint''''); dx=(cPt(1)-stPt(1))/fig.Position(3); dy=(cPt(2)-stPt(2))/fig.Position(4); obj.Position=[stPos(1)+dx, stPos(2)+dy, stPos(3), stPos(4)];''); ' ...
+               'set(fig,''WindowButtonUpFcn'',''fig=gcbf; set(fig,''''WindowButtonMotionFcn'''',''''''''); set(fig,''''WindowButtonUpFcn'''','''''''');'');'];
+    set(h, 'ButtonDownFcn', dragCmd);
 end
 `;
 
