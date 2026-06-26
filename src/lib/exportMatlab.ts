@@ -541,6 +541,23 @@ title('SOC & Active Power');
 legend(legH2, legT2, 'Location', 'northwest');
 formatAxis(ax2, t, false);
 
+% Daily Cycle Annotation
+try
+    if isfield(data, 'dailyCycle') && isfield(data.dailyCycle, pk), dCyc = data.dailyCycle.(pk); else, dCyc = NaN; end
+    if isfield(data, 'totalCycle') && isfield(data.totalCycle, pk), tCyc = data.totalCycle.(pk); else, tCyc = NaN; end
+    if isfield(data, 'dataDate'), dateStrPrint = string(data.dataDate); else, dateStrPrint = "N/A"; end
+
+    if ~isnan(dCyc) || ~isnan(tCyc)
+        strBox = ["Daily cycle (" + dateStrPrint + "):", ...
+                  "  Cycle Plant Avg = " + sprintf('%.3f', dCyc), ...
+                  "", ...
+                  "Total cycle:", ...
+                  "  Total Plant Avg = " + sprintf('%.3f', tCyc)];
+        text(ax2, 0.98, 0.95, strBox, 'Units', 'normalized', 'HorizontalAlignment', 'right', 'VerticalAlignment', 'top', 'BackgroundColor', 'w', 'EdgeColor', [0.8 0.8 0.8], 'FontSize', 9);
+    end
+catch
+end
+
 % TILE 3: Reactive Power & Voltage
 ax3 = nexttile; axs = [axs, ax3];
 yyaxis left; ax3.YColor = '#0072BD'; hold on;
