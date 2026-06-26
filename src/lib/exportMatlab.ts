@@ -553,8 +553,8 @@ try
                   "", ...
                   "Total cycle:", ...
                   "  Total Plant Avg = " + sprintf('%.3f', tCyc)];
-        tbCyc = annotation('textbox', [0.8, 0.52, 0.15, 0.1], 'String', strBox, 'BackgroundColor', 'w', 'EdgeColor', [0.8 0.8 0.8], 'FontSize', 9, 'FitBoxToText', 'on');
-        makeDraggable(tbCyc);
+        tb = annotation('textbox', [0.82 0.55 0.13 0.1], 'String', strBox, 'BackgroundColor', 'w', 'EdgeColor', [0.8 0.8 0.8], 'FontSize', 9, 'FitBoxToText', 'on');
+        makeDraggable(tb);
     end
 catch
 end
