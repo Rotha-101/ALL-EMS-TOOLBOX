@@ -598,6 +598,15 @@ export function DailyEvaluationGraph({
           const t = parseFlexDate(rawTime);
           if (!t) continue;
 
+          // Reject rows from other days to prevent data interleaving
+          const rowY = t.getFullYear();
+          const rowM = String(t.getMonth() + 1).padStart(2, '0');
+          const rowD = String(t.getDate()).padStart(2, '0');
+          const rowDateStr = `${rowY}-${rowM}-${rowD}`;
+          
+          if (!dataDateStr) dataDateStr = rowDateStr;
+          if (rowDateStr !== dataDateStr) continue;
+
           const sec = t.getHours() * 3600 + t.getMinutes() * 60 + t.getSeconds();
           const ti = Math.min(numPoints - 1, Math.max(0, sec));
 
