@@ -974,8 +974,8 @@ export function generatePortableViewHtml(
           chartArea.appendChild(div);
 
           const traces = [
-            applyTrace({ y: evalDataRaw.pTotal[pk], type: 'scatter', mode: 'lines', name: 'P total', line: { color: '#0072BD', width: 2 } }, 0),
-            applyTrace({ y: evalDataRaw.freq[pk], type: 'scatter', mode: 'lines', name: 'Frequency', yaxis: 'y2', line: { color: '#D95319', width: 1.5 } }, 1)
+            applyTrace({ y: evalDataRaw.pTotal[pk], type: 'scattergl', mode: 'lines', name: 'P total', line: { color: '#0072BD', width: 2 } }, 0),
+            applyTrace({ y: evalDataRaw.freq[pk], type: 'scattergl', mode: 'lines', name: 'Frequency', yaxis: 'y2', line: { color: '#D95319', width: 1.5 } }, 1)
           ];
           const layout = getMATLABLayout(drawPanelTitle(pk) + ' | Frequency & Active Power', 'P (MW)', 'F (Hz)', undefined, undefined, 'f_p_' + pk);
           createPlotWithEvents(div, traces, layout, 'f_p_' + pk);
@@ -987,10 +987,10 @@ export function generatePortableViewHtml(
           chartArea.appendChild(div);
 
           const traces = [
-            applyTrace({ y: evalDataRaw.pTotal[pk], type: 'scatter', mode: 'lines', name: 'P total', line: { color: '#0072BD', width: 2 } }, 0),
-            applyTrace({ y: evalDataRaw.cmdP[pk], type: 'scatter', mode: 'lines', name: evalDataRaw.cmdP[pk].some((v) => v != null && !isNaN(v)) ? 'P command from NCC' : 'P command from NCC (No Data)', line: { color: '#D95319', width: 1.6, shape: 'hv' } }, 1),
-            applyTrace({ y: evalDataRaw.remoteP[pk], type: 'scatter', mode: 'lines', name: evalDataRaw.remoteP[pk].some((v) => v != null && !isNaN(v)) ? 'Remote Active Power' : 'Remote Active Power (No Data)', line: { color: '#731A66', width: 1.6 } }, 2),
-            applyTrace({ y: evalDataRaw.soc[pk], type: 'scatter', mode: 'lines', name: 'SOC', yaxis: 'y2', line: { color: '#D95319', width: 2 } }, 3)
+            applyTrace({ y: evalDataRaw.pTotal[pk], type: 'scattergl', mode: 'lines', name: 'P total', line: { color: '#0072BD', width: 2 } }, 0),
+            applyTrace({ y: evalDataRaw.cmdP[pk], type: 'scattergl', mode: 'lines', name: evalDataRaw.cmdP[pk].some((v) => v != null && !isNaN(v)) ? 'P command from NCC' : 'P command from NCC (No Data)', line: { color: '#D95319', width: 1.6, shape: 'hv' } }, 1),
+            applyTrace({ y: evalDataRaw.remoteP[pk], type: 'scattergl', mode: 'lines', name: evalDataRaw.remoteP[pk].some((v) => v != null && !isNaN(v)) ? 'Remote Active Power' : 'Remote Active Power (No Data)', line: { color: '#731A66', width: 1.6 } }, 2),
+            applyTrace({ y: evalDataRaw.soc[pk], type: 'scattergl', mode: 'lines', name: 'SOC', yaxis: 'y2', line: { color: '#D95319', width: 2 } }, 3)
           ];
           const layout = getMATLABLayout(drawPanelTitle(pk) + ' | SOC & Active Power', 'P (MW)', 'SOC (%)', undefined, undefined, 'soc_p_' + pk);
           createPlotWithEvents(div, traces, layout, 'soc_p_' + pk);
@@ -1002,11 +1002,11 @@ export function generatePortableViewHtml(
           chartArea.appendChild(div);
 
           const traces = [
-            applyTrace({ y: evalDataRaw.vab[pk], type: 'scatter', mode: 'lines', name: 'Vab', line: { color: '#0072BD', width: 1.2 } }, 0),
-            applyTrace({ y: evalDataRaw.vbc[pk], type: 'scatter', mode: 'lines', name: 'Vbc', line: { color: '#77AC30', width: 1.2 } }, 1),
-            applyTrace({ y: evalDataRaw.vca[pk], type: 'scatter', mode: 'lines', name: 'Vca', line: { color: '#7E2F8E', width: 1.2 } }, 2),
-            applyTrace({ y: evalDataRaw.qTotal[pk], type: 'scatter', mode: 'lines', name: 'Q total', yaxis: 'y2', line: { color: '#D95319', width: 1.3 } }, 3),
-            applyTrace({ y: evalDataRaw.cmdQ[pk], type: 'scatter', mode: 'lines', name: evalDataRaw.cmdQ[pk].some((v) => v != null && !isNaN(v)) ? 'Q command from NCC' : 'Q command from NCC (No Data)', yaxis: 'y2', line: { color: '#000000', width: 1.6, shape: 'hv' } }, 4)
+            applyTrace({ y: evalDataRaw.vab[pk], type: 'scattergl', mode: 'lines', name: 'Vab', line: { color: '#0072BD', width: 1.2 } }, 0),
+            applyTrace({ y: evalDataRaw.vbc[pk], type: 'scattergl', mode: 'lines', name: 'Vbc', line: { color: '#77AC30', width: 1.2 } }, 1),
+            applyTrace({ y: evalDataRaw.vca[pk], type: 'scattergl', mode: 'lines', name: 'Vca', line: { color: '#7E2F8E', width: 1.2 } }, 2),
+            applyTrace({ y: evalDataRaw.qTotal[pk], type: 'scattergl', mode: 'lines', name: 'Q total', yaxis: 'y2', line: { color: '#D95319', width: 1.3 } }, 3),
+            applyTrace({ y: evalDataRaw.cmdQ[pk], type: 'scattergl', mode: 'lines', name: evalDataRaw.cmdQ[pk].some((v) => v != null && !isNaN(v)) ? 'Q command from NCC' : 'Q command from NCC (No Data)', yaxis: 'y2', line: { color: '#000000', width: 1.6, shape: 'hv' } }, 4)
           ];
           const layout = getMATLABLayout(drawPanelTitle(pk) + ' | Reactive Power & Voltage', 'V (kV)', 'Q (MVar)', undefined, undefined, 'v_q_' + pk);
           createPlotWithEvents(div, traces, layout, 'v_q_' + pk);
@@ -1029,29 +1029,29 @@ export function generatePortableViewHtml(
         div1.className = 'h-[280px] w-full mb-2 relative';
         containerDiv.appendChild(div1);
         createPlotWithEvents(div1, [
-          applyTrace({ y: evalDataRaw.pTotal[pk], type: 'scatter', mode: 'lines', name: 'P total', line: { color: '#0072BD', width: 2 } }, 0),
-          applyTrace({ y: evalDataRaw.freq[pk], type: 'scatter', mode: 'lines', name: 'Frequency', yaxis: 'y2', line: { color: '#D95319', width: 1.5 } }, 1)
+          applyTrace({ y: evalDataRaw.pTotal[pk], type: 'scattergl', mode: 'lines', name: 'P total', line: { color: '#0072BD', width: 2 } }, 0),
+          applyTrace({ y: evalDataRaw.freq[pk], type: 'scattergl', mode: 'lines', name: 'Frequency', yaxis: 'y2', line: { color: '#D95319', width: 1.5 } }, 1)
         ], getMATLABLayout('Frequency & Active Power', 'P (MW)', 'F (Hz)', undefined, undefined, activeMetric + '_fp_' + pk), activeMetric + '_fp_' + pk);
 
         const div2 = document.createElement('div');
         div2.className = 'h-[280px] w-full mb-2 relative';
         containerDiv.appendChild(div2);
         createPlotWithEvents(div2, [
-          applyTrace({ y: evalDataRaw.pTotal[pk], type: 'scatter', mode: 'lines', name: 'P total', line: { color: '#0072BD', width: 1.2 } }, 0),
-          applyTrace({ y: evalDataRaw.cmdP[pk], type: 'scatter', mode: 'lines', name: evalDataRaw.cmdP[pk].some((v) => v != null && !isNaN(v)) ? 'P command from NCC' : 'P command from NCC (No Data)', line: { color: '#D95319', width: 1.6, shape: 'hv' } }, 1),
-          applyTrace({ y: evalDataRaw.remoteP[pk], type: 'scatter', mode: 'lines', name: evalDataRaw.remoteP[pk].some((v) => v != null && !isNaN(v)) ? 'Remote Active Power' : 'Remote Active Power (No Data)', line: { color: '#731A66', width: 1.6 } }, 2),
-          applyTrace({ y: evalDataRaw.soc[pk], type: 'scatter', mode: 'lines', name: 'SOC', yaxis: 'y2', line: { color: '#D95319', width: 1.2 } }, 3)
+          applyTrace({ y: evalDataRaw.pTotal[pk], type: 'scattergl', mode: 'lines', name: 'P total', line: { color: '#0072BD', width: 1.2 } }, 0),
+          applyTrace({ y: evalDataRaw.cmdP[pk], type: 'scattergl', mode: 'lines', name: evalDataRaw.cmdP[pk].some((v) => v != null && !isNaN(v)) ? 'P command from NCC' : 'P command from NCC (No Data)', line: { color: '#D95319', width: 1.6, shape: 'hv' } }, 1),
+          applyTrace({ y: evalDataRaw.remoteP[pk], type: 'scattergl', mode: 'lines', name: evalDataRaw.remoteP[pk].some((v) => v != null && !isNaN(v)) ? 'Remote Active Power' : 'Remote Active Power (No Data)', line: { color: '#731A66', width: 1.6 } }, 2),
+          applyTrace({ y: evalDataRaw.soc[pk], type: 'scattergl', mode: 'lines', name: 'SOC', yaxis: 'y2', line: { color: '#D95319', width: 1.2 } }, 3)
         ], getMATLABLayout('SOC & Active Power', 'P (MW)', 'SOC (%)', undefined, undefined, activeMetric + '_soc_' + pk), activeMetric + '_soc_' + pk);
 
         const div3 = document.createElement('div');
         div3.className = 'h-[280px] w-full mb-2 relative';
         containerDiv.appendChild(div3);
         createPlotWithEvents(div3, [
-          applyTrace({ y: evalDataRaw.vab[pk], type: 'scatter', mode: 'lines', name: 'Vab', line: { color: '#0072BD', width: 1.2 } }, 0),
-          applyTrace({ y: evalDataRaw.vbc[pk], type: 'scatter', mode: 'lines', name: 'Vbc', line: { color: '#77AC30', width: 1.2 } }, 1),
-          applyTrace({ y: evalDataRaw.vca[pk], type: 'scatter', mode: 'lines', name: 'Vca', line: { color: '#7E2F8E', width: 1.2 } }, 2),
-          applyTrace({ y: evalDataRaw.qTotal[pk], type: 'scatter', mode: 'lines', name: 'Q total', yaxis: 'y2', line: { color: '#D95319', width: 1.3 } }, 3),
-          applyTrace({ y: evalDataRaw.cmdQ[pk], type: 'scatter', mode: 'lines', name: evalDataRaw.cmdQ[pk].some((v) => v != null && !isNaN(v)) ? 'Q command from NCC' : 'Q command from NCC (No Data)', yaxis: 'y2', line: { color: '#000000', width: 1.8, shape: 'hv' } }, 4)
+          applyTrace({ y: evalDataRaw.vab[pk], type: 'scattergl', mode: 'lines', name: 'Vab', line: { color: '#0072BD', width: 1.2 } }, 0),
+          applyTrace({ y: evalDataRaw.vbc[pk], type: 'scattergl', mode: 'lines', name: 'Vbc', line: { color: '#77AC30', width: 1.2 } }, 1),
+          applyTrace({ y: evalDataRaw.vca[pk], type: 'scattergl', mode: 'lines', name: 'Vca', line: { color: '#7E2F8E', width: 1.2 } }, 2),
+          applyTrace({ y: evalDataRaw.qTotal[pk], type: 'scattergl', mode: 'lines', name: 'Q total', yaxis: 'y2', line: { color: '#D95319', width: 1.3 } }, 3),
+          applyTrace({ y: evalDataRaw.cmdQ[pk], type: 'scattergl', mode: 'lines', name: evalDataRaw.cmdQ[pk].some((v) => v != null && !isNaN(v)) ? 'Q command from NCC' : 'Q command from NCC (No Data)', yaxis: 'y2', line: { color: '#000000', width: 1.8, shape: 'hv' } }, 4)
         ], getMATLABLayout('Reactive Power & Voltage', 'V (kV)', 'Q (MVar)', undefined, undefined, activeMetric + '_vq_' + pk), activeMetric + '_vq_' + pk);
       } else if (activeMetric === 'fig4') {
         plants.forEach(pk => {
@@ -1069,29 +1069,29 @@ export function generatePortableViewHtml(
           div1.className = 'h-[280px] w-full mb-2 relative';
           containerDiv.appendChild(div1);
           createPlotWithEvents(div1, [
-            applyTrace({ y: evalDataRaw.pTotal[pk], type: 'scatter', mode: 'lines', name: 'P total', line: { color: '#0072BD', width: 2 } }, 0),
-            applyTrace({ y: evalDataRaw.freq[pk], type: 'scatter', mode: 'lines', name: 'Frequency', yaxis: 'y2', line: { color: '#D95319', width: 1.5 } }, 1)
+            applyTrace({ y: evalDataRaw.pTotal[pk], type: 'scattergl', mode: 'lines', name: 'P total', line: { color: '#0072BD', width: 2 } }, 0),
+            applyTrace({ y: evalDataRaw.freq[pk], type: 'scattergl', mode: 'lines', name: 'Frequency', yaxis: 'y2', line: { color: '#D95319', width: 1.5 } }, 1)
           ], getMATLABLayout('Frequency & Active Power', 'P (MW)', 'F (Hz)', undefined, undefined, 'fig4_fp_' + pk), 'fig4_fp_' + pk);
 
           const div2 = document.createElement('div');
           div2.className = 'h-[280px] w-full mb-2 relative';
           containerDiv.appendChild(div2);
           createPlotWithEvents(div2, [
-            applyTrace({ y: evalDataRaw.pTotal[pk], type: 'scatter', mode: 'lines', name: 'P total', line: { color: '#0072BD', width: 1.2 } }, 0),
-            applyTrace({ y: evalDataRaw.cmdP[pk], type: 'scatter', mode: 'lines', name: evalDataRaw.cmdP[pk].some((v) => v != null && !isNaN(v)) ? 'P command from NCC' : 'P command from NCC (No Data)', line: { color: '#D95319', width: 1.6, shape: 'hv' } }, 1),
-            applyTrace({ y: evalDataRaw.remoteP[pk], type: 'scatter', mode: 'lines', name: evalDataRaw.remoteP[pk].some((v) => v != null && !isNaN(v)) ? 'Remote Active Power' : 'Remote Active Power (No Data)', line: { color: '#731A66', width: 1.6 } }, 2),
-            applyTrace({ y: evalDataRaw.soc[pk], type: 'scatter', mode: 'lines', name: 'SOC', yaxis: 'y2', line: { color: '#D95319', width: 1.2 } }, 3)
+            applyTrace({ y: evalDataRaw.pTotal[pk], type: 'scattergl', mode: 'lines', name: 'P total', line: { color: '#0072BD', width: 1.2 } }, 0),
+            applyTrace({ y: evalDataRaw.cmdP[pk], type: 'scattergl', mode: 'lines', name: evalDataRaw.cmdP[pk].some((v) => v != null && !isNaN(v)) ? 'P command from NCC' : 'P command from NCC (No Data)', line: { color: '#D95319', width: 1.6, shape: 'hv' } }, 1),
+            applyTrace({ y: evalDataRaw.remoteP[pk], type: 'scattergl', mode: 'lines', name: evalDataRaw.remoteP[pk].some((v) => v != null && !isNaN(v)) ? 'Remote Active Power' : 'Remote Active Power (No Data)', line: { color: '#731A66', width: 1.6 } }, 2),
+            applyTrace({ y: evalDataRaw.soc[pk], type: 'scattergl', mode: 'lines', name: 'SOC', yaxis: 'y2', line: { color: '#D95319', width: 1.2 } }, 3)
           ], getMATLABLayout('SOC & Active Power', 'P (MW)', 'SOC (%)', undefined, undefined, 'fig4_soc_' + pk), 'fig4_soc_' + pk);
 
           const div3 = document.createElement('div');
           div3.className = 'h-[280px] w-full mb-2 relative';
           containerDiv.appendChild(div3);
           createPlotWithEvents(div3, [
-            applyTrace({ y: evalDataRaw.vab[pk], type: 'scatter', mode: 'lines', name: 'Vab', line: { color: '#0072BD', width: 1.2 } }, 0),
-            applyTrace({ y: evalDataRaw.vbc[pk], type: 'scatter', mode: 'lines', name: 'Vbc', line: { color: '#77AC30', width: 1.2 } }, 1),
-            applyTrace({ y: evalDataRaw.vca[pk], type: 'scatter', mode: 'lines', name: 'Vca', line: { color: '#7E2F8E', width: 1.2 } }, 2),
-            applyTrace({ y: evalDataRaw.qTotal[pk], type: 'scatter', mode: 'lines', name: 'Q total', yaxis: 'y2', line: { color: '#D95319', width: 1.3 } }, 3),
-            applyTrace({ y: evalDataRaw.cmdQ[pk], type: 'scatter', mode: 'lines', name: evalDataRaw.cmdQ[pk].some((v) => v != null && !isNaN(v)) ? 'Q command from NCC' : 'Q command from NCC (No Data)', yaxis: 'y2', line: { color: '#000000', width: 1.8, shape: 'hv' } }, 4)
+            applyTrace({ y: evalDataRaw.vab[pk], type: 'scattergl', mode: 'lines', name: 'Vab', line: { color: '#0072BD', width: 1.2 } }, 0),
+            applyTrace({ y: evalDataRaw.vbc[pk], type: 'scattergl', mode: 'lines', name: 'Vbc', line: { color: '#77AC30', width: 1.2 } }, 1),
+            applyTrace({ y: evalDataRaw.vca[pk], type: 'scattergl', mode: 'lines', name: 'Vca', line: { color: '#7E2F8E', width: 1.2 } }, 2),
+            applyTrace({ y: evalDataRaw.qTotal[pk], type: 'scattergl', mode: 'lines', name: 'Q total', yaxis: 'y2', line: { color: '#D95319', width: 1.3 } }, 3),
+            applyTrace({ y: evalDataRaw.cmdQ[pk], type: 'scattergl', mode: 'lines', name: evalDataRaw.cmdQ[pk].some((v) => v != null && !isNaN(v)) ? 'Q command from NCC' : 'Q command from NCC (No Data)', yaxis: 'y2', line: { color: '#000000', width: 1.8, shape: 'hv' } }, 4)
           ], getMATLABLayout('Reactive Power & Voltage', 'V (kV)', 'Q (MVar)', undefined, undefined, 'fig4_vq_' + pk), 'fig4_vq_' + pk);
         });
       } else if (activeMetric === 'fig5') {
@@ -1103,44 +1103,47 @@ export function generatePortableViewHtml(
           div.className = 'h-[280px] w-full mb-4 relative';
           chartArea.appendChild(div);
 
-          const overlay = document.createElement('div');
-          overlay.className = 'absolute top-10 left-16 z-20 bg-white/95 border border-blue-500/80 px-2 py-1 text-[7.5px] font-mono text-black shadow-sm rounded-sm pointer-events-none leading-relaxed flex flex-col max-w-[230px]';
-          
-          if (statsIndex === 0) {
-            overlay.innerHTML = '<div class="font-bold border-b border-gray-200 pb-0.5 mb-1 text-[8px]">Daily cycle (' + evalDataRaw.dataDate + '):</div>' +
+          if (statsIndex === plants.length - 1) {
+            const overlay1 = document.createElement('div');
+            overlay1.className = 'absolute top-10 left-16 z-20 bg-white/95 border border-blue-500/80 px-2 py-1 text-[7.5px] font-mono text-black shadow-sm rounded-sm draggable-stats cursor-move leading-relaxed flex flex-col max-w-[230px]';
+            overlay1.innerHTML = '<div class="font-bold border-b border-gray-200 pb-0.5 mb-1 text-[8px]">Daily cycle (' + evalDataRaw.dataDate + '):</div>' +
               '<div>Cycle_Plant 01 = ' + evalDataRaw.dailyCycle.plant1.toFixed(3) + ' -> Normal</div>' +
-              '<div>Cycle_Plant 02 = ' + evalDataRaw.dailyCycle.plant2.toFixed(3) + ' -> Normal</div>' +
+              (hasPlant2 ? '<div>Cycle_Plant 02 = ' + evalDataRaw.dailyCycle.plant2.toFixed(3) + ' -> Normal</div>' : '') +
               (hasPlant3 ? '<div>Cycle_Plant 03 = ' + evalDataRaw.dailyCycle.plant3.toFixed(3) + ' -> Normal</div>' : '') +
               '<div class="font-bold text-blue-600 border-t border-gray-200 pt-0.5 mt-0.5">Cycle_Average Daily Cycle = ' + avgDaily.toFixed(3) + ' -> Normal</div>';
-            div.appendChild(overlay);
-          } else if (statsIndex === 1) {
-            overlay.innerHTML = '<div class="font-bold border-b border-gray-200 pb-0.5 mb-1 text-[8px]">Plant Total Cycle (' + evalDataRaw.dataDate + '):</div>' +
+            div.appendChild(overlay1);
+
+            const overlay2 = document.createElement('div');
+            overlay2.className = 'absolute top-10 left-[260px] z-20 bg-white/95 border border-blue-500/80 px-2 py-1 text-[7.5px] font-mono text-black shadow-sm rounded-sm draggable-stats cursor-move leading-relaxed flex flex-col max-w-[230px]';
+            overlay2.innerHTML = '<div class="font-bold border-b border-gray-200 pb-0.5 mb-1 text-[8px]">Plant Total Cycle (' + evalDataRaw.dataDate + '):</div>' +
               '<div>Plant 01 Total Cycle = ' + evalDataRaw.totalCycle.plant1.toFixed(6) + '</div>' +
-              '<div>Plant 02 Total Cycle = ' + evalDataRaw.totalCycle.plant2.toFixed(6) + '</div>' +
+              (hasPlant2 ? '<div>Plant 02 Total Cycle = ' + evalDataRaw.totalCycle.plant2.toFixed(6) + '</div>' : '') +
               (hasPlant3 ? '<div>Plant 03 Total Cycle = ' + evalDataRaw.totalCycle.plant3.toFixed(6) + '</div>' : '') +
               '<div class="font-bold text-blue-600 border-t border-gray-200 pt-0.5 mt-0.5">Average Total Plant Cycle = ' + avgTotal.toFixed(6) + '</div>';
-            div.appendChild(overlay);
-          } else if (statsIndex === 2) {
-            overlay.innerHTML = '<div class="font-bold border-b border-gray-200 pb-0.5 mb-1 text-[8px]">Max deviation timings:</div>' +
+            div.appendChild(overlay2);
+
+            const overlay3 = document.createElement('div');
+            overlay3.className = 'absolute top-10 right-16 z-20 bg-white/95 border border-blue-500/80 px-2 py-1 text-[7.5px] font-mono text-black shadow-sm rounded-sm draggable-stats cursor-move leading-relaxed flex flex-col max-w-[230px]';
+            overlay3.innerHTML = '<div class="font-bold border-b border-gray-200 pb-0.5 mb-1 text-[8px]">Max deviation timings:</div>' +
               '<div>Max deviation (HIGH SOC): ' + evalDataRaw.deviations.highSOC.pair + ' = ' + evalDataRaw.deviations.highSOC.text + '</div>' +
               '<div>Max deviation (LOW SOC): ' + evalDataRaw.deviations.lowSOC.pair + ' = ' + evalDataRaw.deviations.lowSOC.text + '</div>';
-            div.appendChild(overlay);
+            div.appendChild(overlay3);
           }
 
           const socStats = evalDataRaw.socStats[pk];
           const traces = [
-            applyTrace({ y: evalDataRaw.pTotal[pk], type: 'scatter', mode: 'lines', name: 'P total', line: { color: '#0072BD', width: 1.2 } }, 0),
-            applyTrace({ y: evalDataRaw.cmdP[pk], type: 'scatter', mode: 'lines', name: evalDataRaw.cmdP[pk].some((v) => v != null && !isNaN(v)) ? 'P command from NCC' : 'P command from NCC (No Data)', line: { color: '#D95319', width: 1.6, shape: 'hv' } }, 1),
-            applyTrace({ y: evalDataRaw.remoteP[pk], type: 'scatter', mode: 'lines', name: evalDataRaw.remoteP[pk].some((v) => v != null && !isNaN(v)) ? 'Remote Active Power' : 'Remote Active Power (No Data)', line: { color: '#731A66', width: 1.6 } }, 2),
-            applyTrace({ y: evalDataRaw.dispatchP[pk], type: 'scatter', mode: 'lines', name: 'P dispatch allocation', showlegend: Boolean(evalDataRaw?.dispatchP?.[pk]?.some((v) => v != null && !isNaN(v))), line: { color: '#339933', width: 1.8, dash: 'dash' } }, 3),
-            applyTrace({ y: evalDataRaw.soc[pk], type: 'scatter', mode: 'lines', name: 'SOC', yaxis: 'y2', line: { color: '#D95319', width: 1.2 } }, 4)
+            applyTrace({ y: evalDataRaw.pTotal[pk], type: 'scattergl', mode: 'lines', name: 'P total', line: { color: '#0072BD', width: 1.2 } }, 0),
+            applyTrace({ y: evalDataRaw.cmdP[pk], type: 'scattergl', mode: 'lines', name: evalDataRaw.cmdP[pk].some((v) => v != null && !isNaN(v)) ? 'P command from NCC' : 'P command from NCC (No Data)', line: { color: '#D95319', width: 1.6, shape: 'hv' } }, 1),
+            applyTrace({ y: evalDataRaw.remoteP[pk], type: 'scattergl', mode: 'lines', name: evalDataRaw.remoteP[pk].some((v) => v != null && !isNaN(v)) ? 'Remote Active Power' : 'Remote Active Power (No Data)', line: { color: '#731A66', width: 1.6 } }, 2),
+            applyTrace({ y: evalDataRaw.dispatchP[pk], type: 'scattergl', mode: 'lines', name: 'P dispatch allocation', showlegend: Boolean(evalDataRaw?.dispatchP?.[pk]?.some((v) => v != null && !isNaN(v))), line: { color: '#339933', width: 1.8, dash: 'dash' } }, 3),
+            applyTrace({ y: evalDataRaw.soc[pk], type: 'scattergl', mode: 'lines', name: 'SOC', yaxis: 'y2', line: { color: '#D95319', width: 1.2 } }, 4)
           ];
 
           if (false /* disabled socStats.maxIdx !== 0 */) {
             traces.push({
               x: [timeX[socStats.maxIdx]],
               y: [socStats.maxSoc],
-              type: 'scatter',
+              type: 'scattergl',
               mode: 'markers',
               yaxis: 'y2',
               name: 'Max SOC point',
@@ -1152,7 +1155,7 @@ export function generatePortableViewHtml(
             traces.push({
               x: [timeX[socStats.minIdx]],
               y: [socStats.minSoc],
-              type: 'scatter',
+              type: 'scattergl',
               mode: 'markers',
               yaxis: 'y2',
               name: 'Min SOC point',
@@ -1202,11 +1205,11 @@ export function generatePortableViewHtml(
           chartArea.appendChild(div);
 
           const traces = [
-            applyTrace({ y: evalDataRaw.vab[pk], type: 'scatter', mode: 'lines', name: 'Vab', line: { color: '#0072BD', width: 1.2 } }, 0),
-            applyTrace({ y: evalDataRaw.vbc[pk], type: 'scatter', mode: 'lines', name: 'Vbc', line: { color: '#77AC30', width: 1.2 } }, 1),
-            applyTrace({ y: evalDataRaw.vca[pk], type: 'scatter', mode: 'lines', name: 'Vca', line: { color: '#7E2F8E', width: 1.2 } }, 2),
-            applyTrace({ y: evalDataRaw.qTotal[pk], type: 'scatter', mode: 'lines', name: 'Q total', yaxis: 'y2', line: { color: '#D95319', width: 1.3 } }, 3),
-            applyTrace({ y: evalDataRaw.cmdQ[pk], type: 'scatter', mode: 'lines', name: 'Q command from NCC', yaxis: 'y2', line: { color: '#000000', width: 1.8, shape: 'hv' } }, 4)
+            applyTrace({ y: evalDataRaw.vab[pk], type: 'scattergl', mode: 'lines', name: 'Vab', line: { color: '#0072BD', width: 1.2 } }, 0),
+            applyTrace({ y: evalDataRaw.vbc[pk], type: 'scattergl', mode: 'lines', name: 'Vbc', line: { color: '#77AC30', width: 1.2 } }, 1),
+            applyTrace({ y: evalDataRaw.vca[pk], type: 'scattergl', mode: 'lines', name: 'Vca', line: { color: '#7E2F8E', width: 1.2 } }, 2),
+            applyTrace({ y: evalDataRaw.qTotal[pk], type: 'scattergl', mode: 'lines', name: 'Q total', yaxis: 'y2', line: { color: '#D95319', width: 1.3 } }, 3),
+            applyTrace({ y: evalDataRaw.cmdQ[pk], type: 'scattergl', mode: 'lines', name: 'Q command from NCC', yaxis: 'y2', line: { color: '#000000', width: 1.8, shape: 'hv' } }, 4)
           ];
           const layout = getMATLABLayout(drawPanelTitle(pk) + ' | Reactive Power & Voltage', 'V (kV)', 'Q (MVar)', undefined, undefined, 'fig6_' + pk);
           createPlotWithEvents(div, traces, layout, 'fig6_' + pk);
@@ -1320,6 +1323,29 @@ export function generatePortableViewHtml(
       renderAll();
       updatePinCounter();
       document.getElementById('select-active-metric').value = activeMetric;
+
+      document.querySelectorAll('.draggable-stats').forEach(el => {
+        let isDragging = false;
+        let startX, startY, initialX, initialY;
+        el.addEventListener('mousedown', e => {
+          isDragging = true;
+          startX = e.clientX;
+          startY = e.clientY;
+          initialX = el.offsetLeft;
+          initialY = el.offsetTop;
+          el.style.zIndex = '1000';
+        });
+        document.addEventListener('mousemove', e => {
+          if (!isDragging) return;
+          el.style.left = (initialX + (e.clientX - startX)) + 'px';
+          el.style.top = (initialY + (e.clientY - startY)) + 'px';
+          el.style.right = 'auto';
+        });
+        document.addEventListener('mouseup', () => {
+          isDragging = false;
+          el.style.zIndex = '20';
+        });
+      });
     };
   </script>
 </body>
